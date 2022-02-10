@@ -1,7 +1,7 @@
 import boto3
 import json
 import time
-
+import os
 
 def condition_check(statement_list):
     pr_list = []
@@ -14,9 +14,18 @@ def condition_check(statement_list):
     return pr_list if pr_list else None
 
 
-start_time = time.time()
+def write_file_out(data,filepath,filename):
+    completeFilePath = os.path.join(filepath,filename)
+    with open(completeFilePath,"w") as f:
+        f.write(
+            json.dumps(data,sort_keys=True,indent=4,default=str)
+        )
+
 bucket_name = input("Enter Bucket Name: ")
 profile_name = input("Enter Profile Name: ")
+export_path = input("Enter path for file export: ").replace("\\","\\\\")
+export_name = input("Enter name for file export: ")
+start_time = time.time()
 session = boto3.Session(profile_name=profile_name,region_name="us-west-2")
 iam = session.resource('iam')
 s3 = session.resource('s3')
@@ -31,7 +40,7 @@ principal_list = dict({k:v for k,v in [(role.role_id,role.role_name)
                 for user in iam.users.all() if cond_list and
                 user.user_id in cond_list]}
             )
-
+write_file_out(principal_list,export_path,export_name)
 print(principal_list)
 
 print("---  %s seconds ---" % (time.time()- start_time))
