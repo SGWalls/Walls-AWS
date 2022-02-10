@@ -47,16 +47,3 @@ print("---  %s seconds ---" % (time.time()- start_time))
 #         'arn:aws:s3:::tmk-cdm-data/raw/lnl-mainframe/alis-cvfile/current/*',
 #     ]
 # )
-
-
-# def get_principal(identifier):
-#     if identifier[0:4] == "AROA":
-#         return principal_list[identifier] 
-#     elif identifier[0:4] == "AIDA":
-#         return user_list[identifier]
-
-# principal_access = {}
-# for id in cond_list:
-#     principal_access[id] = get_principal(id)
-
-# print(principal_access)
