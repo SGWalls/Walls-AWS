@@ -18,42 +18,81 @@ def resource_check(statement,target_value):
     try:
         if isinstance(statement['Resource'],list):
             return (
-                        any(
-                            (target_value in string 
-                            for 
-                            string in statement['Resource']) 
-                            or 
-                            (
-                                ("*" in statement['Resource']) 
-                                and 
-                                (
-                                    ("s3:" in string for string in statement['Action'])
-                                    if 
-                                    isinstance(statement['Action'],list) 
-                                    else 
-                                    ("s3:" in statement['Action'])
-                                )   
-                            )
-                        )
-                    )        
+            any(
+                (
+                    target_value in string 
+                    for 
+                    string in statement['Resource']
+                ) 
+                or 
+                (
+                    ("*" in statement['Resource']) 
+                    and 
+                    (
+                        ("s3:" in string for string in statement['Action'])
+                        if 
+                        isinstance(statement['Action'],list) 
+                        else 
+                        ("s3:" in statement['Action'])
+                    )   
+                )
+            )
+        )        
         else:
-            return (target_value in statement['Resource'] 
-                    or statement['Resource'] == "*")
+            return (
+                target_value in statement['Resource'] 
+                or 
+                (
+                    statement['Resource'] == "*"
+                    and 
+                    (
+                        ("s3:" in string for string in statement['Action'])
+                        if 
+                        isinstance(statement['Action'],list) 
+                        else 
+                        ("s3:" in statement['Action'])
+                    )   
+                )
+            )
     except KeyError:
         if isinstance(statement['NotResource'],list):
-            return (any((("s3:" in item for item in statement['Action']) or 
-                         ( "*" in statement['Action'])) and 
-                         (target_value not in string for string in 
-                          statement['NotResource'])) 
-                     or (("*" in statement['NotResource']) and 
-                         ("s3:" not in item for item in statement['Action']))
-                   )        
+            return (
+            any(
+                    (
+                        (
+                            ("s3:" in item for item in statement['Action']) 
+                            or 
+                            ( "*" in statement['Action'])
+                        ) 
+                        and 
+                        (
+                            target_value not in string 
+                            for string in 
+                            statement['NotResource']
+                        )
+                    )                             
+                    or 
+                    (
+                        ("*" in statement['NotResource']) 
+                        and 
+                        ("s3:" not in item for item in statement['Action'])
+                    )
+                )
+            )        
         else:
-            return ((("s3:" in item for item in statement['Action']) and 
-                     (target_value not in statement['NotResource'])) #or 
+            return (
+                (
+                    (
+                        "s3:" in item for item in statement['Action']
+                    ) 
+                    and 
+                    (
+                        target_value not in statement['NotResource']
+                    )
+                ) #or 
                     # (("s3:" not in item for item in statement['Action']) and
                     #  (statement['NotResource'] == "*"))
-                    )
+            )
         
 
 
