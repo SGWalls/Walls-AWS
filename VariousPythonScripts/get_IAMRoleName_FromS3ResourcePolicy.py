@@ -15,6 +15,10 @@ def condition_check(statement_list):
 
 
 def resource_check(statement,target_value):    
+    if statement.get('Action'):
+        action_type = 'Action'
+    else:
+        action_type = 'NotAction'
     try:
         if isinstance(statement['Resource'],list):
             return (
@@ -29,11 +33,11 @@ def resource_check(statement,target_value):
                     ("*" in statement['Resource']) 
                     and 
                     (
-                        ("s3:" in string for string in statement['Action'])
+                        ("s3:" in string for string in statement[action_type])
                         if 
-                        isinstance(statement['Action'],list) 
+                        isinstance(statement[action_type],list) 
                         else 
-                        ("s3:" in statement['Action'])
+                        ("s3:" in statement[action_type])
                     )   
                 )
             )
@@ -46,23 +50,27 @@ def resource_check(statement,target_value):
                     statement['Resource'] == "*"
                     and 
                     (
-                        ("s3:" in string for string in statement['Action'])
+                        ("s3:" in string for string in statement[action_type])
                         if 
-                        isinstance(statement['Action'],list) 
+                        isinstance(statement[action_type],list) 
                         else 
-                        ("s3:" in statement['Action'])
+                        ("s3:" in statement[action_type])
                     )   
                 )
             )
     except KeyError:
+        # if statement.get('Action'):
+        #     action_type = 
+        # else:
+        #     action_type = 'NotAction'
         if isinstance(statement['NotResource'],list):
             return (
             any(
                     (
                         (
-                            ("s3:" in item for item in statement['Action']) 
+                            ("s3:" in item for item in statement[action_type]) 
                             or 
-                            ( "*" in statement['Action'])
+                            ( "*" in statement[action_type])
                         ) 
                         and 
                         (
@@ -75,7 +83,7 @@ def resource_check(statement,target_value):
                     (
                         ("*" in statement['NotResource']) 
                         and 
-                        ("s3:" not in item for item in statement['Action'])
+                        ("s3:" not in item for item in statement[action_type])
                     )
                 )
             )        
@@ -83,14 +91,14 @@ def resource_check(statement,target_value):
             return (
                 (
                     (
-                        "s3:" in item for item in statement['Action']
+                        "s3:" in item for item in statement[action_type]
                     ) 
                     and 
                     (
                         target_value not in statement['NotResource']
                     )
                 ) #or 
-                    # (("s3:" not in item for item in statement['Action']) and
+                    # (("s3:" not in item for item in statement[action_type]) and
                     #  (statement['NotResource'] == "*"))
             )
         
