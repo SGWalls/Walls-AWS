@@ -1,4 +1,28 @@
 import boto3
+import os
+import logging
+from botocore.exceptions import SSOTokenLoadError
+from botocore.exceptions import UnauthorizedSSOTokenError
+
+
+logger = logging.getLogger()
+
+
+def delimiter(symbol='='):
+    logger.info(symbol * 120)
+
+
+def test_token(session):
+    client = session.client('sts')
+    try:
+        client.get_caller_identity()
+    except (UnauthorizedSSOTokenError, SSOTokenLoadError) as e:
+        if "expired or is otherwise invalid" in str(e):
+            delimiter()
+            logger.info(e)
+            logger.info("Reinitiating SSO Login...")
+            os.system(f"aws sso login --profile {session.profile_name}")
+    return 
 
 
 def get_ipranges(ipblocks):
@@ -11,12 +35,14 @@ def get_ipranges(ipblocks):
         ipranges.append(iprange)
     return ipranges
 
-session = boto3.session.Session(profile_name="cdm_tst",region_name="us-west-2")
+
+profileName = input("Use which profile: ")
+session = boto3.session.Session(profile_name=profileName,region_name="us-west-2")
+test_token(session)
 ec2 = session.client('ec2')
 vpc_id = input('Enter VPC ID: ')
 group_name = input('Enter a Name for the Security Group: ')
-ipRange_list = input('Enter a list of IP Ranges to be allowed: ')
-ipRange_list.split(',')
+ipRange_list = input('Enter a list of IP Ranges to be allowed: ').split(',')
 ingress_permission = [
     {
         'FromPort': 443,
