@@ -95,9 +95,9 @@ for accountId in accounts:
             PrincipalId=targetPrincipalId
         )['AccountAssignmentCreationStatus']
     
-
+userprofile = os.environ['USERPROFILE']
 current_time = datetime.now().strftime("%Y_%m_%d-%I_%M_%S_%p")
-file_directory = "C:\\Users\\sgwalls\\Documents\\AWS_Projects\\AWS_Tasks"
+file_directory = f"{userprofile}\\Documents\\AWS_Projects\\AWS_Tasks"
 file_name = f"Added_PermissionSet_{current_time}.json"
 directory = os.path.normpath(file_directory)
 file = file_name
