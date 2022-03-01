@@ -1,9 +1,11 @@
 {
   "ExpandedNodes": [
     "",
+    "\\AccountMigration",
     "\\aws_IAMTasks",
+    "\\helpers",
     "\\VariousPythonScripts"
   ],
-  "SelectedNode": "\\aws_IAMTasks\\PermissionSets_Deploy_Specified_Set.py",
+  "SelectedNode": "\\AccountMigration\\AccountMigrationClassTest_v0.0.9.py",
   "PreviewInSolutionExplorer": false
 }

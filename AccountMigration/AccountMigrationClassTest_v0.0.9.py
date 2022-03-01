@@ -35,6 +35,7 @@ class Account:
             region="us-west-2"):            
         self.accountid = account_id
         self.master = master_obj
+        self.email = self.master.org.describe_account(AccountId=self.accountid)['Account']['Email']
         self.root_id = org_root
         self.rolename = role_name
         self.credentials = self.assume_role(self.accountid,
@@ -47,6 +48,8 @@ class Account:
         )
         self.org = self.session.client("organizations")
         self.ec2 = self.session.resource("ec2")
+        self.guardduty = self.session.client("guardduty")
+        self.securityhub = self.session.client("securityhub")
         self.vpcs = self.get_vpcs()
         self.ou = self.get_ou()
 
@@ -111,6 +114,26 @@ class Account:
                 )
         return
 
+    def leave_guardduty(self):
+        try:
+           response = self.master.guardduty.disassociate_members(
+                DetectorId=self.master.detectorId,
+                AccountIds=[self.accountid]
+                )
+        except:
+            print("Unable to Process GuardDuty Disassociation. Will need to perform manually.")
+
+    def join_guardduty(self,masterobj):
+        masterobj.guardduty.create_members(
+            DetectorId=self.master.detectorId,
+            AccountDetails=[
+                {
+                    'AccountId':self.accountid,
+                    'Email':self.email
+                }
+            ]
+        )
+
     def get_vpcs(self):
         vpc_list = self.ec2.vpcs.filter(
             Filters = [
@@ -153,13 +176,25 @@ class Master:
                             )
             self.rootId = "r-7w8p"
             self.executionRole = "OrganizationAccountAccessRole"
+            self.guardduty = self.session.client("guardduty")
+            self.detectorId = self.guardduty.list_detectors()['DetectorIds'][0]
         elif accountId == "662627786878":
             self.session = boto3.session.Session(
                                 profile_name="ct_master",
                                 region_name="us-west-2"
-                            )            
+                            )
+            self.get_caller_account()
             self.rootId = "r-mdy1"
             self.executionRole = "AWSControlTowerExecution"
+            self.auditAccount = Account(
+                                    '124178480447',
+                                    master_obj=self,
+                                    org_root=self.rootId,
+                                    role_name=self.executionRole
+                                )
+            self.guardduty = self.auditAccount.guardduty
+            self.detectorId = self.guardduty.list_detectors()['DetectorIds'][0]
+            self.securityhub = self.auditAccount.securityhub
         else:
             print("Account ID is not a valid Master Account")
         self.org = self.session.client("organizations")
