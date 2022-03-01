@@ -6,36 +6,15 @@ from botocore.exceptions import ClientError
 from botocore.exceptions import SSOTokenLoadError
 from botocore.exceptions import UnauthorizedSSOTokenError
 
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
-
-ROOT_ID = "r-7w8p"
-ASSUMED_ROLE = "OrganizationAccountAccessRole" 
-NEW_RESOLVER_RULE = "rslvr-rr-b333b2fa07e04cddb"
-# session = boto3.session.Session(
-#     profile_name="master",
-#     region_name="us-west-2"
-# )
-# dest_session = boto3.session.Session(
-#     profile_name="ct_master",
-#     region_name="us-west-2"
-# )
-# dest_org = dest_session.client('organizations')
-# sts = session.client("sts")
-# org = session.client("organizations")
-region_list = ['ap-northeast-1', 'ap-northeast-2', 'ap-south-1', 
-               'ap-southeast-1', 'ap-southeast-2', 'ca-central-1', 
-               'eu-central-1', 'eu-north-1', 'eu-west-1', 'eu-west-2', 
-               'eu-west-3', 'sa-east-1', 'us-east-1', 
-               'us-east-2', 'us-west-1', 'us-west-2']
 
 class Account():
     def __init__(
             self,account_id, master_obj=None, org_root=ROOT_ID, role_name=ASSUMED_ROLE,
             region="us-west-2"):            
-        self.accountid = account_id
-        self.master = master_obj
-        self.email = self.master.org.describe_account(accountid=self.accountid)['account']['email'] if self.master else none
+        self.accountid = account_id        
+        if master_obj:
+            self.master = master_obj
+            self.email = self.master.org.describe_account(accountid=self.accountid)['account']['email']
         self.root_id = org_root
         self.rolename = role_name
         self.credentials = self.assume_role(self.accountid,
@@ -97,15 +76,15 @@ class Account():
                 channel = client.describe_delivery_channels()['DeliveryChannels'][0]
                 print(recorder)
                 print(channel)
-                # client.stop_configuration_recorder(
-                #     ConfigurationRecorderName = recorder['name']
-                # )
-                # client.delete_delivery_channel(
-                #     DeliveryChannelName=channel['name']
-                # )
-                # client.delete_configuration_recorder(
-                #     ConfigurationRecorderName = recorder['name']
-                # )
+                client.stop_configuration_recorder(
+                    ConfigurationRecorderName = recorder['name']
+                )
+                client.delete_delivery_channel(
+                    DeliveryChannelName=channel['name']
+                )
+                client.delete_configuration_recorder(
+                    ConfigurationRecorderName = recorder['name']
+                )
                 print(f"{self.accountid}: Removed Configuration Recorder and "
                       f"Delivery Channel in region {region}")
             else:
@@ -255,6 +234,14 @@ class Master():
         )
         return
 
+    def deregister_security(self,account_id):
+        self.guardduty_remove(account_id)
+        self.securityhub_remove(account_id)
+
+    def register_security(self,account_id,account_email):
+        self.guardduty_add(account_id,account_email)
+        self.securityhub_add(account_id,account_email)
+
 
 def delimiter(symbol='='):
     logger.info(symbol * 120)
@@ -266,7 +253,44 @@ def create_filter(name=None, values=[]):
             "Values": values
         }
 
+
+def create_logger(logger_name,log_path,log_file_name):
+    logger = logging.getLogger(logger_name)
+    logger.setLevel(logging.INFO)
+    formatter = logging.Formatter(
+        '%(asctime)s ::%(levelname)s:: %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
+    file_handler = logging.FileHandler(os.path.join(log_path, log_file_name))
+    file_handler.setFormatter(formatter)
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
+    logger.addHandler(console_handler)
+    return logger
+
+
 if __name__ == "__main__":
+    userprofile = os.environ["USERPROFILE"]
+    log_path = os.path.dirname(
+        f"{userprofile}\\Documents\\AWS_Projects\\Scripts\\Python\\"
+         "logging\\AccountMoveProcess\\"
+    )
+    log_file_name = f"account-org-move-{datetime.now().strftime('%Y%m%d')}.log"
+    if not os.path.exists(log_path):
+        os.makedirs(log_path)
+
+    logger = create_logger("AccountMoveLogger",log_path,log_file_name)
+    ROOT_ID = "r-7w8p"
+    ASSUMED_ROLE = "OrganizationAccountAccessRole" 
+    NEW_RESOLVER_RULE = "rslvr-rr-b333b2fa07e04cddb"
+    region_list = ['ap-northeast-1', 'ap-northeast-2', 'ap-south-1', 
+                   'ap-southeast-1', 'ap-southeast-2', 'ca-central-1', 
+                   'eu-central-1', 'eu-north-1', 'eu-west-1', 'eu-west-2', 
+                   'eu-west-3', 'sa-east-1', 'us-east-1', 
+                   'us-east-2', 'us-west-1', 'us-west-2']
+
+
     legacy_master = Master('741252614647')
     new_master = Master('662627786878')
 
@@ -276,17 +300,21 @@ if __name__ == "__main__":
     accounts = target_input.split(',')                    
 
     for account in accounts:
+        delimiter()
+        logger.info(f"Beginning Account Re-Association Process.  Current Account: {account}")
         accnt = Account(
             account_id=account,
             master_obj=legacy_master)
-        print(accnt.ou)
+        logger.info(f"Account original OU: {accnt.ou}")
         for vpc in accnt.vpcs:
             print(vpc.id)    
         # handshake_info = new_master.invite_account(account)
         # accnt = Account(account)
         # accnt.config_cleanup()
+        # legacy_master.deregister_security(accnt.accountid)
         # accnt.leave_organization()
         # accnt.accept_invitation(handshake_info['Id'])
+        # new_master.register_security(accnt.accountid,accnt.email)
         # accnt.update_resolver_rule(accnt.vpcs)
         # new_master.move_account(
         #     accountId=accnt.accountid,
