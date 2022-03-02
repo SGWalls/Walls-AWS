@@ -2,6 +2,7 @@ import boto3
 import json
 import os
 import logging
+import inspect
 from botocore.exceptions import ClientError
 from botocore.exceptions import SSOTokenLoadError
 from botocore.exceptions import UnauthorizedSSOTokenError
@@ -9,8 +10,9 @@ from botocore.exceptions import UnauthorizedSSOTokenError
 
 class Account():
     def __init__(
-            self,account_id, master_obj=None, org_root=ROOT_ID, role_name=ASSUMED_ROLE,
-            region="us-west-2"):            
+            self, account_id, logger, master_obj=None, org_root=ROOT_ID, role_name=ASSUMED_ROLE,
+            region="us-west-2"):
+        self.logger = logger
         self.accountid = account_id        
         if master_obj:
             self.master = master_obj
@@ -74,8 +76,8 @@ class Account():
             if recorder['ConfigurationRecorders']:
                 recorder = recorder['ConfigurationRecorders'][0]
                 channel = client.describe_delivery_channels()['DeliveryChannels'][0]
-                print(recorder)
-                print(channel)
+                logger.info(recorder)
+                logger.info(channel)
                 client.stop_configuration_recorder(
                     ConfigurationRecorderName = recorder['name']
                 )
@@ -85,10 +87,10 @@ class Account():
                 client.delete_configuration_recorder(
                     ConfigurationRecorderName = recorder['name']
                 )
-                print(f"{self.accountid}: Removed Configuration Recorder and "
+                logger.info(f"{self.accountid}: Removed Configuration Recorder and "
                       f"Delivery Channel in region {region}")
             else:
-                print(
+                logger.info(
                     f"{self.accountid}: No Configuration Recorder in {region}"
                 )
         return
@@ -104,13 +106,13 @@ class Account():
     def leave_organization(self):
         client = self.org
         try:
-            print(f"Account with ID: {self.accountid} is leaving the Organization")
+            logger.info(f"Account with ID: {self.accountid} is leaving the Organization")
             client.leave_organization()
         except Exception as e:
             raise
 
     def accept_invitation(self,identifier):
-        print(f"Accepting the handshake with ID: {identifier}")
+        logger.info(f"Accepting the handshake with ID: {identifier}")
         self.org.accept_handshake(
             HandshakeId=identifier
         )
@@ -126,7 +128,8 @@ class Account():
 
 
 class Master():
-    def __init__(self,accountId):
+    def __init__(self, accountId, logger):
+        self.logger = logger
         self.accountId = accountId         
         if accountId == "741252614647":
             self.session = boto3.session.Session(
@@ -206,15 +209,20 @@ class Master():
         return
 
     def guardduty_add(self,account_id,account_email):
-        self.guardduty.create_members(
-                DetectorId=self.detectorId,
-                AccountDetails=[
-                    {
-                        'AccountId':account_id,
-                        'Email':account_email
-                    }
-                ]
-            )
+        try:
+            self.guardduty.create_members(
+                    DetectorId=self.detectorId,
+                    AccountDetails=[
+                        {
+                            'AccountId':account_id,
+                            'Email':account_email
+                        }
+                    ]
+                )
+        except Exception as e:
+            message = {'FILE': __file__.split('/')[-1], 'CLASS': self.__class__.__name__,
+                       'METHOD': inspect.stack()[0][3], 'EXCEPTION': str(e)}
+            self.logger.exception(message)
         return
 
     def securityhub_remove(self,account_id):
@@ -291,8 +299,8 @@ if __name__ == "__main__":
                    'us-east-2', 'us-west-1', 'us-west-2']
 
 
-    legacy_master = Master('741252614647')
-    new_master = Master('662627786878')
+    legacy_master = Master('741252614647', logger)
+    new_master = Master('662627786878', logger)
 
     target_input = input("List the Account IDs for the target account " 
                         "(Separate multiple entries with a comma ','): ")
@@ -304,7 +312,9 @@ if __name__ == "__main__":
         logger.info(f"Beginning Account Re-Association Process.  Current Account: {account}")
         accnt = Account(
             account_id=account,
-            master_obj=legacy_master)
+            logger=logger,
+            master_obj=legacy_master
+        )
         logger.info(f"Account original OU: {accnt.ou}")
         for vpc in accnt.vpcs:
             print(vpc.id)    
