@@ -3,6 +3,7 @@ import json
 import os
 import logging
 import inspect
+from datetime import datetime
 from botocore.exceptions import ClientError
 from botocore.exceptions import SSOTokenLoadError
 from botocore.exceptions import UnauthorizedSSOTokenError
@@ -222,7 +223,9 @@ class Master():
         except Exception as e:
             message = {'FILE': __file__.split('/')[-1], 'CLASS': self.__class__.__name__,
                        'METHOD': inspect.stack()[0][3], 'EXCEPTION': str(e)}
+            self.logger.info(delimiter("!"))
             self.logger.exception(message)
+            self.logger.info(delimiter("!"))
         return
 
     def securityhub_remove(self,account_id):
@@ -232,7 +235,8 @@ class Master():
         return
 
     def securityhub_add(self,account_id,account_email):
-        self.securityhub.create_members(
+        try:
+            self.securityhub.create_members(
             AccountDetails=[
                 {
                     'AccountId':account_id,
@@ -240,6 +244,12 @@ class Master():
                 }
             ]
         )
+        except Exception as e:
+            message = {'FILE': __file__.split('/')[-1], 'CLASS': self.__class__.__name__,
+                       'METHOD': inspect.stack()[0][3], 'EXCEPTION': str(e)}
+            self.logger.info(delimiter("!"))
+            self.logger.exception(message)
+            self.logger.info(delimiter("!"))
         return
 
     def deregister_security(self,account_id):
@@ -284,7 +294,7 @@ if __name__ == "__main__":
         f"{userprofile}\\Documents\\AWS_Projects\\Scripts\\Python\\"
          "logging\\AccountMoveProcess\\"
     )
-    log_file_name = f"account-org-move-{datetime.now().strftime('%Y%m%d')}.log"
+    log_file_name = f"account-org-move-{datetime.now().strftime('%Y%m%d_%H.%M.%S')}.log"
     if not os.path.exists(log_path):
         os.makedirs(log_path)
 
