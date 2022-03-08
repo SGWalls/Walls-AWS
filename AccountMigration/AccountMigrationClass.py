@@ -71,27 +71,30 @@ class Account():
     
     def config_cleanup(self):
         for region in region_list:
-            print(region)
+            self.logger.info(f"Removing Config Recorder in region: {region}")
             client = self.client_config(self.credentials,"config",region)
             recorder = client.describe_configuration_recorders()
             if recorder['ConfigurationRecorders']:
                 recorder = recorder['ConfigurationRecorders'][0]
                 channel = client.describe_delivery_channels()['DeliveryChannels'][0]
-                logger.info(recorder)
-                logger.info(channel)
+                self.logger.info(recorder)
+                self.logger.info(channel)
+                self.logger.info("...Stopping Config Recorder...")
                 client.stop_configuration_recorder(
                     ConfigurationRecorderName = recorder['name']
                 )
+                self.logger.info("...Deleting Config Delivery Channel...")
                 client.delete_delivery_channel(
                     DeliveryChannelName=channel['name']
                 )
+                self.logger.info("...Deleting Config Recorder...")
                 client.delete_configuration_recorder(
                     ConfigurationRecorderName = recorder['name']
                 )
-                logger.info(f"{self.accountid}: Removed Configuration Recorder and "
+                self.logger.info(f"{self.accountid}: Removed Configuration Recorder and "
                       f"Delivery Channel in region {region}")
             else:
-                logger.info(
+                self.logger.info(
                     f"{self.accountid}: No Configuration Recorder in {region}"
                 )
         return
@@ -107,13 +110,13 @@ class Account():
     def leave_organization(self):
         client = self.org
         try:
-            logger.info(f"Account with ID: {self.accountid} is leaving the Organization")
+            self.logger.info(f"Account with ID: {self.accountid} is leaving the Organization")
             client.leave_organization()
         except Exception as e:
             raise
 
     def accept_invitation(self,identifier):
-        logger.info(f"Accepting the handshake with ID: {identifier}")
+        self.logger.info(f"Accepting the handshake with ID: {identifier}")
         self.org.accept_handshake(
             HandshakeId=identifier
         )
@@ -327,19 +330,21 @@ if __name__ == "__main__":
         )
         logger.info(f"Account original OU: {accnt.ou}")
         for vpc in accnt.vpcs:
-            print(vpc.id)    
-        # handshake_info = new_master.invite_account(account)
-        # accnt = Account(account)
-        # accnt.config_cleanup()
-        # legacy_master.deregister_security(accnt.accountid)
-        # accnt.leave_organization()
-        # accnt.accept_invitation(handshake_info['Id'])
-        # new_master.register_security(accnt.accountid,accnt.email)
-        # accnt.update_resolver_rule(accnt.vpcs)
-        # new_master.move_account(
-        #     accountId=accnt.accountid,
-        #     sourceId=new_master.rootId,
-        #     destinationId=new_master.find_ou(
-        #         identifier=accnt.ou['Name']
-        #         )
-        #     )
+            print(vpc.id) 
+        logger.info(f"Inviting Account {account} to new Organization...")
+        handshake_info = new_master.invite_account(account)
+        accnt = Account(account)
+        logger.info(f"Beginning AWS Config Cleanup. Removing Legacy settings...")
+        accnt.config_cleanup()
+        legacy_master.deregister_security(accnt.accountid)
+        accnt.leave_organization()
+        accnt.accept_invitation(handshake_info['Id'])
+        new_master.register_security(accnt.accountid,accnt.email)
+        accnt.update_resolver_rule(accnt.vpcs)
+        new_master.move_account(
+            accountId=accnt.accountid,
+            sourceId=new_master.rootId,
+            destinationId=new_master.find_ou(
+                identifier=accnt.ou['Name']
+                )
+            )
