@@ -71,6 +71,46 @@ class Account():
         ou_details = org.describe_organizational_unit(
             OrganizationalUnitId=ou[0])['OrganizationalUnit']
         return ou_details
+
+    def create_management_role(self):
+        iam = self.client_config(self.credentials,"iam")
+        try:
+            response = iam.create_role(
+                RoleName="AWSControlTowerExecution",
+                AssumeRolePolicyDocument=json.dumps(
+                    {
+                        "Version": "2012-10-17",
+                        "Statement": [
+                            {
+                              "Effect": "Allow",
+                              "Principal": {
+                                "AWS": [
+                                  "662627786878"
+                                ],
+                                "Service": [
+                                  "controltower.amazonaws.com"
+                                ]
+                              },
+                              "Action": [
+                                "sts:AssumeRole"
+                              ]
+                            }
+                        ]
+                    }
+                )
+            )['Role']
+            iam.attach_role_policy(
+                RoleName=response['RoleName'],
+                PolicyArn="arn:aws:iam::aws:policy/AdministratorAccess"
+            )
+        except Exception as e:
+            message = {'FILE': __file__.split('/')[-1], 'CLASS': self.__class__.__name__,
+                       'METHOD': inspect.stack()[0][3], 'EXCEPTION': str(e)}
+            self.logger.info(delimiter("!"))
+            self.logger.exception(message)
+            self.logger.info(delimiter("!"))
+        return
+
     
     def config_cleanup(self):
         for region in region_list:
@@ -127,10 +167,17 @@ class Account():
     def update_resolver_rule(self,vpc_list,resolverRuleId=NEW_RESOLVER_RULE):
         client = self.session.client("route53resolver")
         for vpc in list(vpc_list):
-            client.associate_resolver_rule(
-                ResolverRuleId=resolverRuleId,
-                VPCId=vpc.id
-            )
+            try:
+                client.associate_resolver_rule(
+                    ResolverRuleId=resolverRuleId,
+                    VPCId=vpc.id
+                )
+            except Exception as e:
+                message = {'FILE': __file__.split('/')[-1], 'CLASS': self.__class__.__name__,
+                           'METHOD': inspect.stack()[0][3], 'EXCEPTION': str(e)}
+                self.logger.info(delimiter("!"))
+                self.logger.exception(message)
+                self.logger.info(delimiter("!"))
         return
 
 
@@ -331,6 +378,8 @@ if __name__ == "__main__":
             logger=logger,
             master_obj=legacy_master
         )
+        logger.info(f"Creating AWSControlTowerExecution role in account: {account}...")
+        accnt.create_management_role()
         logger.info(f"Account original OU: {accnt.ou}")
         for vpc in accnt.vpcs:
             print(vpc.id) 
