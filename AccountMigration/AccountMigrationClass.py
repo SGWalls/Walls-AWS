@@ -8,6 +8,9 @@ from botocore.exceptions import ClientError
 from botocore.exceptions import SSOTokenLoadError
 from botocore.exceptions import UnauthorizedSSOTokenError
 
+ROOT_ID = "r-7w8p"
+ASSUMED_ROLE = "OrganizationAccountAccessRole" 
+NEW_RESOLVER_RULE = "rslvr-rr-b333b2fa07e04cddb"
 
 class Account():
     def __init__(
@@ -17,7 +20,7 @@ class Account():
         self.accountid = account_id        
         if master_obj:
             self.master = master_obj
-            self.email = self.master.org.describe_account(accountid=self.accountid)['account']['email']
+            self.email = self.master.org.describe_account(AccountId=self.accountid)['Account']['Email']
         self.root_id = org_root
         self.rolename = role_name
         self.credentials = self.assume_role(self.accountid,
@@ -142,6 +145,8 @@ class Master():
                             )
             self.rootId = "r-7w8p"
             self.executionRole = "OrganizationAccountAccessRole"
+            self.org = self.session.client("organizations")
+            self.sts = self.session.client("sts")
             self.guardduty = self.session.client("guardduty")
             self.detectorId = self.guardduty.list_detectors()['DetectorIds'][0]
             self.securityhub = self.session.client("securityhub")
@@ -153,8 +158,11 @@ class Master():
             self.get_caller_account()
             self.rootId = "r-mdy1"
             self.executionRole = "AWSControlTowerExecution"
+            self.org = self.session.client("organizations")
+            self.sts = self.session.client("sts")
             self.auditAccount = Account(
                                     '124178480447',
+                                    logger=self.logger,
                                     master_obj=self,
                                     org_root=self.rootId,
                                     role_name=self.executionRole
@@ -164,8 +172,6 @@ class Master():
             self.securityhub = self.auditAccount.securityhub
         else:
             print("Account ID is not a valid Master Account")
-        self.org = self.session.client("organizations")
-        self.sts = self.session.client("sts")
         self.get_caller_account()
 
     def get_caller_account(self):
@@ -180,7 +186,7 @@ class Master():
                 return self.session.client('sts').get_caller_identity().get('Account')
 
     def invite_account(self,identifier):        
-        response = self.org.invite_account_to_organizaiton(
+        response = self.org.invite_account_to_organization(
             Target={
                 'Id':identifier,
                 'Type':'ACCOUNT'
@@ -302,9 +308,6 @@ if __name__ == "__main__":
         os.makedirs(log_path)
 
     logger = create_logger("AccountMoveLogger",log_path,log_file_name)
-    ROOT_ID = "r-7w8p"
-    ASSUMED_ROLE = "OrganizationAccountAccessRole" 
-    NEW_RESOLVER_RULE = "rslvr-rr-b333b2fa07e04cddb"
     region_list = ['ap-northeast-1', 'ap-northeast-2', 'ap-south-1', 
                    'ap-southeast-1', 'ap-southeast-2', 'ca-central-1', 
                    'eu-central-1', 'eu-north-1', 'eu-west-1', 'eu-west-2', 
@@ -333,14 +336,16 @@ if __name__ == "__main__":
             print(vpc.id) 
         logger.info(f"Inviting Account {account} to new Organization...")
         handshake_info = new_master.invite_account(account)
-        accnt = Account(account)
         logger.info(f"Beginning AWS Config Cleanup. Removing Legacy settings...")
         accnt.config_cleanup()
+        logger.info("Beginning Security Service deregistration from Legacy Environment...")
         legacy_master.deregister_security(accnt.accountid)
         accnt.leave_organization()
+        logger.info("Accepting invitation to new Organization...")
         accnt.accept_invitation(handshake_info['Id'])
+        logger.info("Beginning registration of Security Services in the New Organiziaton...")
         new_master.register_security(accnt.accountid,accnt.email)
-        accnt.update_resolver_rule(accnt.vpcs)
+        logger.info(f"Moving Account {account} to the correct OU...")
         new_master.move_account(
             accountId=accnt.accountid,
             sourceId=new_master.rootId,
@@ -348,3 +353,6 @@ if __name__ == "__main__":
                 identifier=accnt.ou['Name']
                 )
             )
+        logger.info("Beginning update of ResolverRules for Account VPCs...")
+        accnt.update_resolver_rule(accnt.vpcs)
+        
