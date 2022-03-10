@@ -3,6 +3,7 @@ import json
 import os
 import logging
 import inspect
+import time
 from datetime import datetime
 from botocore.exceptions import ClientError
 from botocore.exceptions import SSOTokenLoadError
@@ -388,7 +389,7 @@ if __name__ == "__main__":
         logger.info(f"Beginning AWS Config Cleanup. Removing Legacy settings...")
         accnt.config_cleanup()
         logger.info("Beginning Security Service deregistration from Legacy Environment...")
-        legacy_master.deregister_security(accnt.accountid)
+        legacy_master.(accnt.accountid)
         accnt.leave_organization()
         logger.info("Accepting invitation to new Organization...")
         accnt.accept_invitation(handshake_info['Id'])
@@ -402,6 +403,7 @@ if __name__ == "__main__":
                 identifier=accnt.ou['Name']
                 )
             )
+        time.sleep(5)
         logger.info("Beginning update of ResolverRules for Account VPCs...")
         accnt.update_resolver_rule(accnt.vpcs)
         
