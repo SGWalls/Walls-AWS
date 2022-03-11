@@ -389,7 +389,7 @@ if __name__ == "__main__":
         logger.info(f"Beginning AWS Config Cleanup. Removing Legacy settings...")
         accnt.config_cleanup()
         logger.info("Beginning Security Service deregistration from Legacy Environment...")
-        legacy_master.(accnt.accountid)
+        legacy_master.deregister_security(accnt.accountid)
         accnt.leave_organization()
         logger.info("Accepting invitation to new Organization...")
         accnt.accept_invitation(handshake_info['Id'])
