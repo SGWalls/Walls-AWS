@@ -157,7 +157,16 @@ class Account():
             self.logger.info(f"Account with ID: {self.accountid} is leaving the Organization")
             client.leave_organization()
         except Exception as e:
-            raise
+            message = {'FILE': __file__.split('/')[-1], 'CLASS': self.__class__.__name__,
+                       'METHOD': inspect.stack()[0][3], 'EXCEPTION': str(e)}
+            self.logger.info(delimiter("!"))
+            self.logger.exception(message)
+            self.logger.info(delimiter())
+            self.logger.info("Cancelling Organization Invite...")
+            self.master.cancel_invite(self.handshakeId)
+            self.logger.info(delimiter())
+            self.logger.info(delimiter("!"))
+        return
 
     def accept_invitation(self,identifier):
         self.logger.info(f"Accepting the handshake with ID: {identifier}")
@@ -234,13 +243,45 @@ class Master():
                 return self.session.client('sts').get_caller_identity().get('Account')
 
     def invite_account(self,identifier):        
-        response = self.org.invite_account_to_organization(
-            Target={
-                'Id':identifier,
-                'Type':'ACCOUNT'
-            }
-        )
-        return response['Handshake']
+        try:
+            response = self.org.invite_account_to_organization(
+                Target={
+                    'Id':identifier,
+                    'Type':'ACCOUNT'
+                }
+            )
+            return response['Handshake']
+        except self.org.exceptions.DuplicateHandshakeException as e:
+            message = {'FILE': __file__.split('/')[-1], 'CLASS': self.__class__.__name__,
+                       'METHOD': inspect.stack()[0][3], 'EXCEPTION': str(e)}
+            self.logger.info(delimiter("!"))
+            self.logger.exception(message)
+            self.logger.info(delimiter("!"))
+            self.logger.info("Retrieving existing HandshakeId...")
+            handshake_info = self.org.list_handshakes_for_organization()['Handshakes']
+            response = [handshake for handshake in handshake_info if (
+                [party for party in handshake['Parties'] if party['Id'] == identifier])][0]
+            return response
+        except Exception as e:
+            message = {'FILE': __file__.split('/')[-1], 'CLASS': self.__class__.__name__,
+                       'METHOD': inspect.stack()[0][3], 'EXCEPTION': str(e)}
+            self.logger.info(delimiter("!"))
+            self.logger.exception(message)
+            self.logger.info(delimiter("!"))
+        return
+
+
+    def cancel_invite(self,identifier):
+        try:
+            self.org.cancel_handshake(HandshakeId=identifier)
+            self.logger.info("Organization Invite Cancelled!")
+        except Exception as e:
+            message = {'FILE': __file__.split('/')[-1], 'CLASS': self.__class__.__name__,
+                       'METHOD': inspect.stack()[0][3], 'EXCEPTION': str(e)}
+            self.logger.info(delimiter("!"))
+            self.logger.exception(message)
+            self.logger.info(delimiter("!"))
+        return
 
     def move_account(self,accountId,sourceId,destinationId):
         self.org.move_account(
@@ -386,6 +427,7 @@ if __name__ == "__main__":
             print(vpc.id) 
         logger.info(f"Inviting Account {account} to new Organization...")
         handshake_info = new_master.invite_account(account)
+        accnt.handshakeId = handshake_info['Id']
         logger.info(f"Beginning AWS Config Cleanup. Removing Legacy settings...")
         accnt.config_cleanup()
         logger.info("Beginning Security Service deregistration from Legacy Environment...")

@@ -657,13 +657,9 @@ print("Attempting authentication for %s..." % username)
 token = getAuthToken(username,password)
 print("Authentication successful.\n")
 catalogs = {
-	'internal_files': [
-		'',
-        'refinedusps_delstat'
-	],
-    'external_datasets':[
-        ''
-    ]
+	'internal_files': [		
+        'usps_delstat'
+	]
 }
 
 region = "us-west-2"
