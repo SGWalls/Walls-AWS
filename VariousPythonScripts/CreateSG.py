@@ -43,6 +43,7 @@ ec2 = session.client('ec2')
 vpc_id = input('Enter VPC ID: ')
 group_name = input('Enter a Name for the Security Group: ')
 ipRange_list = input('Enter a list of IP Ranges to be allowed: ').split(',')
+description = input("Description for Group: ")
 ingress_permission = [
     {
         'FromPort': 443,
@@ -53,7 +54,7 @@ ingress_permission = [
 ]
 
 new_group = ec2.create_security_group(
-        Description='Allows Access to State Machine VPC endpoint.',
+        Description=description,
         GroupName=group_name,
         VpcId=vpc_id
     )

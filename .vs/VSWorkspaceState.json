@@ -3,9 +3,10 @@
     "",
     "\\AccountMigration",
     "\\aws_IAMTasks",
+    "\\aws_transitgateway_Tasks",
     "\\helpers",
     "\\VariousPythonScripts"
   ],
-  "SelectedNode": "\\AccountMigration\\AccountMigrationClass.py",
+  "SelectedNode": "\\aws_transitgateway_Tasks\\transit_gateway_attachment_deploy_v0.3.11.py",
   "PreviewInSolutionExplorer": false
 }
