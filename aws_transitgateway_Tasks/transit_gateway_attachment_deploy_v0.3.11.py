@@ -109,6 +109,20 @@ def get_accounts(root_identifier, parent_filter):
     return target_account_list
 
 
+def attachment_exists_check(filterKey, filteredList, masterList, tgwId):
+    try:
+        result = next(x for x in masterList if 
+                    x['VpcId'] == filteredList[filterKey]['VpcId'] and 
+                    x['VpcOwnerId'] == filteredList[filterKey]['VpcOwnerId'] and
+                    x['TransitGatewayId'] == tgwId )
+    except StopIteration:
+        return False
+    if result:
+        return True
+    else:
+        return False
+
+
 def attachment_cleanup(vpc_identifier, new_target, old_attachment_id=None,
                        old_target=OLD_TRANSIT_GATEWAY):
     remove_attachment = True
@@ -157,26 +171,23 @@ def attachment_cleanup(vpc_identifier, new_target, old_attachment_id=None,
              "to the list of attachments to be removed."
         )        
         attachments_to_remove[account_id].append(old_attachment_id)
+        logger.info(f"Disabling propagation of attachment with ID: "
+                    f"{old_attachment_id} to Transit Gateway Route Table "
+                        "with ID: tgw-rtb-07c7a524c697e84c9")
         try:
-            logger.info(f"Disabling propagation of attachment with ID: "
-                        f"{old_attachment_id} to Transit Gateway Route Table "
-                         "with ID: tgw-rtb-07c7a524c697e84c9")
-            try:
-                net_ec2.disable_transit_gateway_route_table_propagation(
-                    TransitGatewayRouteTableId ='tgw-rtb-07c7a524c697e84c9',
-                    TransitGatewayAttachmentId = old_attachment_id,
-                    DryRun=DRY_RUN
-                )
-            except ClientError as e:
-                if e.response['Error']['Code'] == 'TransitGatewayRouteTablePropagation.NotFound':
-                    logger.info("Propagation does not exist.")
-                else:
-                    Raise
+            net_ec2.disable_transit_gateway_route_table_propagation(
+                TransitGatewayRouteTableId ='tgw-rtb-07c7a524c697e84c9',
+                TransitGatewayAttachmentId = old_attachment_id,
+                DryRun=DRY_RUN
+            )
         except ClientError as e:
-            if e.response['Error']['Code'] == 'DryRunOperation':
+            if (e.response['Error']['Code'] == 
+                'TransitGatewayRouteTablePropagation.NotFound'):
+                logger.info("Propagation does not exist.")
+            elif e.response['Error']['Code'] == 'DryRunOperation':
                 handle_dry_run(e)
             else:
-                raise
+                Raise
         delimiter()
     return 
 
@@ -241,7 +252,8 @@ def create_attachment(vpcid=None, subnet_identifiers=None,
     return
 
 logger = create_logger('tgw_a_logger')
-root_id = input("Please input the Root ID: ")
+root_id = input("Target the Legacy or Control Tower Organization? "
+                "(Enter 'leg' or 'ct'): ")
 transit_gateway_id = input("Enter the NEW Transit Gateway's ID: ")
 target_ou_input = input(
     "Enter the names of the OU/OUs to be targetted, "
@@ -260,14 +272,16 @@ vpc_exclusion_input = input(
 vpc_exclusion_list = vpc_exclusion_input.split(' ')
 region = 'us-west-2'
 
-if root_id == "r-mdy1":
+if root_id == "ct":
+    root_id = "r-mdy1"
     role_name = 'AWSControlTowerExecution'
     session = boto3.session.Session(
         profile_name='ct_master',
         region_name=region
     )
     org_label = 'ct'    
-elif root_id == "r-7w8p":
+elif root_id == "leg":
+    root_id = "r-7w8p"
     role_name = 'OrganizationAccountAccessRole'
     session = boto3.session.Session(
         profile_name='master',
@@ -276,7 +290,7 @@ elif root_id == "r-7w8p":
     org_label = 'leg'
 else:
     raise ValueError(
-        'Invalid Root ID. ID is either incorrect or'
+        'Invalid Root ID. Organization target input is either incorrect or'
         'does not belong to Globe-owned AWS Organizations'
     )
 
@@ -294,15 +308,16 @@ except (UnauthorizedSSOTokenError, SSOTokenLoadError) as e:
         logger.info("Reinitiating SSO Login...")
         os.system(f"aws sso login --profile {net_session.profile_name}")
 
-# account_list = get_accounts(root_id, target_ou_list)
-account_list = [{'Id': '741252614647','Arn': 'arn:aws:organizations::741252614647:account/o-tuwjxnhqr4/741252614647','Email': 'TorchmarkAWS@torchmarkcorp.com','Name': 'Torchmark AWS','Status': 'ACTIVE'},]
+account_list = get_accounts(root_id, target_ou_list)
+# account_list = [{'Id': '741252614647','Arn': 'arn:aws:organizations::741252614647:account/o-tuwjxnhqr4/741252614647','Email': 'TorchmarkAWS@torchmarkcorp.com','Name': 'Torchmark AWS','Status': 'ACTIVE'},]
 account_id_list = [identifier['Id'] for identifier in account_list]
-tgw_attachment_list = {
-    (tgw['TransitGatewayId'], tgw['VpcId'], tgw['VpcOwnerId']): tgw
-    for tgw in net_ec2.describe_transit_gateway_vpc_attachments(
+master_list = net_ec2.describe_transit_gateway_vpc_attachments(
         Filters=[
             create_filter('state', ['available'])
         ])['TransitGatewayVpcAttachments']
+tgw_attachment_list = {
+    (tgw['TransitGatewayId'], tgw['VpcId'], tgw['VpcOwnerId']): tgw
+    for tgw in master_list
     if tgw['VpcOwnerId'] in account_id_list
     if tgw['VpcId'] not in vpc_exclusion_list
     if tgw['TransitGatewayId'] != transit_gateway_id
@@ -322,7 +337,7 @@ for account_id in account_id_list:
     )
     attachment_name = f"{account_name[0]}-TGW"
 
-    if account_id != '741252614647':
+    if account_id != session.client('sts').get_caller_identity()['Account']:
         credentials = assume_role(
             account_id,
             session_name='deploy-transit-gateway-attachment'
@@ -342,6 +357,21 @@ for account_id in account_id_list:
     if tgw_filter:
         attachments_to_remove[account_id] = []
         for tgw in tgw_filter:
+            if attachment_exists_check(tgw, tgw_attachment_list, master_list,
+                                       'tgw-04dbb41df14fdf4ea'):
+                logger.info(f"{account_id} already has a VPC Attachment for "
+                    f"Transit Gateway: {transit_gateway_id} with vpc: "
+                    f"{tgw_attachment_list[tgw]['VpcId']}")
+                continue
+            else:
+                vpc_id = tgw_attachment_list[tgw]['VpcId']
+                subnet_ids = tgw_attachment_list[tgw]['SubnetIds']
+                attachment_id = tgw_attachment_list[tgw]['TransitGatewayAttachmentId']
+                create_attachment(
+                    vpc_id,
+                    subnet_ids,
+                    transit_gateway_id,
+                )
             vpc_id = tgw_attachment_list[tgw]['VpcId']
             subnet_ids = tgw_attachment_list[tgw]['SubnetIds']
             attachment_id = tgw_attachment_list[tgw]['TransitGatewayAttachmentId']
