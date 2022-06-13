@@ -1,3 +1,4 @@
+from ast import Raise
 import boto3
 import os
 import time
@@ -160,11 +161,17 @@ def attachment_cleanup(vpc_identifier, new_target, old_attachment_id=None,
             logger.info(f"Disabling propagation of attachment with ID: "
                         f"{old_attachment_id} to Transit Gateway Route Table "
                          "with ID: tgw-rtb-07c7a524c697e84c9")
-            net_ec2.disable_transit_gateway_route_table_propagation(
-                TransitGatewayRouteTableId ='tgw-rtb-07c7a524c697e84c9',
-                TransitGatewayAttachmentId = old_attachment_id,
-                DryRun=DRY_RUN
-            )
+            try:
+                net_ec2.disable_transit_gateway_route_table_propagation(
+                    TransitGatewayRouteTableId ='tgw-rtb-07c7a524c697e84c9',
+                    TransitGatewayAttachmentId = old_attachment_id,
+                    DryRun=DRY_RUN
+                )
+            except ClientError as e:
+                if e.response['Error']['Code'] == 'TransitGatewayRouteTablePropagation.NotFound':
+                    logger.info("Propagation does not exist.")
+                else:
+                    Raise
         except ClientError as e:
             if e.response['Error']['Code'] == 'DryRunOperation':
                 handle_dry_run(e)
@@ -173,32 +180,41 @@ def attachment_cleanup(vpc_identifier, new_target, old_attachment_id=None,
         delimiter()
     return 
 
+
 def create_attachment(vpcid=None, subnet_identifiers=None, 
                       new_gateway_id=None,):
     try:
         delimiter('_')
         logger.info(f"Creating a new attachment for VPC: {vpcid}")
-        new_attachment = ec2[account_id].create_transit_gateway_vpc_attachment(
-            TransitGatewayId=new_gateway_id,
-            VpcId=vpcid,
-            SubnetIds=subnet_identifiers,
-            TagSpecifications=[
-                {
-                    'ResourceType': 'transit-gateway-attachment',
-                    'Tags': [
-                        create_tag('Name', attachment_name)
-                    ]
-                }
-            ],
-            DryRun=DRY_RUN
-        )['TransitGatewayVpcAttachment']
-        # logger.debug(new_attachment)        
+        skiptgwa = False
+        try:
+            new_attachment = ec2[account_id].create_transit_gateway_vpc_attachment(
+                TransitGatewayId=new_gateway_id,
+                VpcId=vpcid,
+                SubnetIds=subnet_identifiers,
+                TagSpecifications=[
+                    {
+                        'ResourceType': 'transit-gateway-attachment',
+                        'Tags': [
+                            create_tag('Name', attachment_name)
+                        ]
+                    }
+                ],
+                DryRun=DRY_RUN
+            )['TransitGatewayVpcAttachment']
+            # logger.debug(new_attachment) 
+        except ClientError as e:
+            if e.response['Error']['Code'] == 'DuplicateTransitGatewayAttachment':
+                logger.info("TGWAttachment already exists")
+                skiptgwa = True   
+            else:
+                Raise
     except ClientError as e:
         if e.response['Error']['Code'] == 'DryRunOperation':
             handle_dry_run(e)
         else:
             raise
-    if not DRY_RUN:
+    if not DRY_RUN and not skiptgwa:
         time.sleep(1)
         try:
             delimiter('_')
@@ -278,7 +294,8 @@ except (UnauthorizedSSOTokenError, SSOTokenLoadError) as e:
         logger.info("Reinitiating SSO Login...")
         os.system(f"aws sso login --profile {net_session.profile_name}")
 
-account_list = get_accounts(root_id, target_ou_list)
+# account_list = get_accounts(root_id, target_ou_list)
+account_list = [{'Id': '741252614647','Arn': 'arn:aws:organizations::741252614647:account/o-tuwjxnhqr4/741252614647','Email': 'TorchmarkAWS@torchmarkcorp.com','Name': 'Torchmark AWS','Status': 'ACTIVE'},]
 account_id_list = [identifier['Id'] for identifier in account_list]
 tgw_attachment_list = {
     (tgw['TransitGatewayId'], tgw['VpcId'], tgw['VpcOwnerId']): tgw
@@ -305,18 +322,22 @@ for account_id in account_id_list:
     )
     attachment_name = f"{account_name[0]}-TGW"
 
-    credentials = assume_role(
-        account_id,
-        session_name='deploy-transit-gateway-attachment'
-    )
-    ec2[account_id] = boto3.client('ec2',
-                       **credentials,
-                       region_name=region
-                       )
-    ec2_resource[account_id] = boto3.resource('ec2',
-                                  **credentials,
-                                  region_name=region
-                                  )
+    if account_id != '741252614647':
+        credentials = assume_role(
+            account_id,
+            session_name='deploy-transit-gateway-attachment'
+        )
+        ec2[account_id] = boto3.client('ec2',
+                        **credentials,
+                        region_name=region
+                        )
+        ec2_resource[account_id] = boto3.resource('ec2',
+                                    **credentials,
+                                    region_name=region
+                                    )
+    else:
+        ec2[account_id] = session.client('ec2')
+        ec2_resource[account_id] = session.resource('ec2')
     logger.debug(tgw_filter)
     if tgw_filter:
         attachments_to_remove[account_id] = []
