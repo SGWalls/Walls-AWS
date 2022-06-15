@@ -222,9 +222,22 @@ with open(routes_completeFilePath) as json_file:
     static_routes = json.load(json_file)
 
 for account in attachments:
-    credentials = assume_role(account,'remove_tgw_attachment')
-    ec2 = session.client('ec2', **credentials, region_name=region)
-    ec2_resource = session.resource('ec2', **credentials, region_name=region)
+    if account != session.client('sts').get_caller_identity()['Account']:
+        credentials = assume_role(
+            account,
+            session_name='deploy-transit-gateway-attachment'
+        )
+        ec2 = boto3.client('ec2',
+                        **credentials,
+                        region_name=region
+                        )
+        ec2_resource = boto3.resource('ec2',
+                                    **credentials,
+                                    region_name=region
+                                    )
+    else:
+        ec2 = session.client('ec2')
+        ec2_resource = session.resource('ec2')
     vpc_list = ec2_resource.vpcs.all()
     for tgw_attachment in attachments[account]:
         if process_choice == "delete":
