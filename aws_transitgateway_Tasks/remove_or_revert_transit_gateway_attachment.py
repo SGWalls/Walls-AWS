@@ -100,6 +100,23 @@ def delete_attachment(old_attachment_id):
             handle_dry_run(e)
 
 
+def revert_tgw_route(cidrBlock,routeTableId):
+    try:
+        response = net_ec2.delete_transit_gateway_route(
+            TransitGatewayRouteTableId=routeTableId,
+            DestinationCidrBlock=cidrBlock,
+            DryRun=DRY_RUN
+        )['Route']
+        logger.info(f"Successfully removed Route {cidrBlock} in Transit "
+                    f"Gateway Route Table {routeTableId}.")
+    except ClientError as e:
+        if e.response['Error']['Code'] == 'DryRunOperation':
+            handle_dry_run(e)
+        elif e.response['Error']['Code'] == 'InvalidRoute.NotFound':
+            logger.error(f"{e.response['Error']['Message']}")    
+    return
+
+
 def revert_attachment(sourceDetails, targetDetails):
     vpc_identifier = targetDetails[0]['VpcId']
     new_target = targetDetails[0]['TransitGatewayId']
@@ -135,7 +152,7 @@ def revert_attachment(sourceDetails, targetDetails):
     try:
         net_ec2.enable_transit_gateway_route_table_propagation(
             TransitGatewayRouteTableId='tgw-rtb-07c7a524c697e84c9',
-            TransitGatewayAttachmentId=new_target[0]['TransitGatewayAttachmentId'],
+            TransitGatewayAttachmentId=targetDetails[0]['TransitGatewayAttachmentId'],
             DryRun=DRY_RUN
         )
     except ClientError as e:
@@ -190,15 +207,19 @@ tgw_attachment_list = {
 }
   
 sts = session.client('sts')
-filename = (f"Attachments_to_be_removed-{org_label}_org.json")
+attch_filename = (f"Attachments_to_be_removed-{org_label}_org.json")
+routes_filename = (f"StaticRoutes_added-{org_label}_org.json")
 import_path = (
     f"{userprofile}\\Documents\\AWS_Projects\\Scripts\\Python\\"
      "transit_gateway_attachment_deploy\\"
 )
-completeFilePath = os.path.join(import_path, filename)    
+attch_completeFilePath = os.path.join(import_path, attch_filename)    
+routes_completeFilePath = os.path.join(import_path, routes_filename)
 
-with open(completeFilePath) as json_file:
+with open(attch_completeFilePath) as json_file:
     attachments = json.load(json_file)
+with open(routes_completeFilePath) as json_file:
+    static_routes = json.load(json_file)
 
 for account in attachments:
     credentials = assume_role(account,'remove_tgw_attachment')
@@ -210,14 +231,22 @@ for account in attachments:
             delete_attachment(tgw_attachment)
         elif process_choice == "revert":
             attach_details = net_ec2.describe_transit_gateway_vpc_attachments(
-            Filters=[
-                create_filter('transit-gateway-attachment-id', [tgw_attachment])
-            ])['TransitGatewayVpcAttachments']
+                Filters=[
+                    create_filter('transit-gateway-attachment-id', 
+                                  [tgw_attachment])
+                ])['TransitGatewayVpcAttachments']
             old_details = net_ec2.describe_transit_gateway_vpc_attachments(
-            Filters=[
-                create_filter('transit-gateway-id', ['tgw-04dbb41df14fdf4ea']),
-                create_filter('vpc-id',[attach_details[0]['VpcId']])
-            ])['TransitGatewayVpcAttachments']
+                Filters=[
+                    create_filter('transit-gateway-id', 
+                                  ['tgw-04dbb41df14fdf4ea']),
+                    create_filter('vpc-id',[attach_details[0]['VpcId']])
+                ])['TransitGatewayVpcAttachments']
             revert_attachment(old_details, attach_details)
         else:
             logger.info("Invalid Choice")
+if process_choice == "revert":
+    for routeTableId in static_routes:
+        for route_details in static_routes[routeTableId]:
+            logger.info(f"Attemping to remove Route {route_details['Cidr']} "
+                        f"in Transit Gateway Route Table {routeTableId}. . .")
+            revert_tgw_route(route_details['Cidr'],routeTableId)
