@@ -1,4 +1,3 @@
-from ast import Raise
 import boto3
 import os
 import time
@@ -11,6 +10,7 @@ from botocore.exceptions import UnauthorizedSSOTokenError
 
 DRY_RUN = True
 OLD_TRANSIT_GATEWAY = 'tgw-06bb3922001900477'
+NEW_TRANSIT_GATEWAY = 'tgw-04dbb41df14fdf4ea'
 
 userprofile = os.environ["USERPROFILE"]
 log_path = os.path.dirname(
@@ -123,6 +123,48 @@ def attachment_exists_check(filterKey, filteredList, masterList, tgwId):
         return False
 
 
+def route_dict_gen(cidrBlock,destinationId):
+    return {"Cidr":cidrBlock,"Destination":destinationId}
+
+
+def add_tgw_route(destinationCidr: list, routeTableId: list, destinationId):
+    for cidr in destinationCidr:
+        for routeTable in routeTableId:
+            try:
+                net_ec2.create_transit_gateway_route(
+                    DestinationCidrBlock=cidr,
+                    TransitGatewayRouteTableId=routeTable,
+                    TransitGatewayAttachmentId=destinationId,
+                    Blackhole=False,
+                    DryRun=DRY_RUN
+                )
+                static_routes[routeTable].append(route_dict_gen(
+                                                    cidr,
+                                                    destinationId))                
+            except ClientError as e:
+                if e.response['Error']['Code'] == 'DryRunOperation':
+                    handle_dry_run(e)
+                    static_routes[routeTable].append(route_dict_gen(
+                                                    cidr,
+                                                    destinationId))
+                elif e.response['Error']['Code'] == 'RouteAlreadyExists':
+                    logger.info(f"Route to CIDR: {destinationCidr} with a destination "
+                                f"{destinationId}, Already Exists!!")
+                else:
+                    raise
+
+
+def get_vpc_details(vpcId):
+    vpc_cidrs = []
+    vpc_details = ec2[account_id].describe_vpcs(VpcIds=[vpcId])['Vpcs'][0]
+    # vpc_cidrs.append(vpc_details['CidrBlock'])
+    if vpc_details['CidrBlockAssociationSet']:
+        vpc_cidrs.extend([x['CidrBlock'] for x in 
+                          vpc_details['CidrBlockAssociationSet']])
+    return vpc_cidrs
+
+
+
 def attachment_cleanup(vpc_identifier, new_target, old_attachment_id=None,
                        old_target=OLD_TRANSIT_GATEWAY):
     remove_attachment = True
@@ -187,7 +229,7 @@ def attachment_cleanup(vpc_identifier, new_target, old_attachment_id=None,
             elif e.response['Error']['Code'] == 'DryRunOperation':
                 handle_dry_run(e)
             else:
-                Raise
+                raise
         delimiter()
     return 
 
@@ -219,7 +261,7 @@ def create_attachment(vpcid=None, subnet_identifiers=None,
                 logger.info("TGWAttachment already exists")
                 skiptgwa = True   
             else:
-                Raise
+                raise
     except ClientError as e:
         if e.response['Error']['Code'] == 'DryRunOperation':
             handle_dry_run(e)
@@ -254,7 +296,8 @@ def create_attachment(vpcid=None, subnet_identifiers=None,
 logger = create_logger('tgw_a_logger')
 root_id = input("Target the Legacy or Control Tower Organization? "
                 "(Enter 'leg' or 'ct'): ")
-transit_gateway_id = input("Enter the NEW Transit Gateway's ID: ")
+# transit_gateway_id = input("Enter the NEW Transit Gateway's ID: ")
+transit_gateway_id = NEW_TRANSIT_GATEWAY
 target_ou_input = input(
     "Enter the names of the OU/OUs to be targetted, "
     "(Separate multiple values with a space): "
@@ -322,10 +365,16 @@ tgw_attachment_list = {
     if tgw['VpcId'] not in vpc_exclusion_list
     if tgw['TransitGatewayId'] != transit_gateway_id
 }
+tgw_routeTable_list = ['tgw-rtb-04214dbcfe858b011','tgw-rtb-00d12bf624f48ecc6',
+                       'tgw-rtb-069ac10f7b16adde5','tgw-rtb-0e8c5ebf4a2021914']
+static_route_destination = 'tgw-attach-0a3897f43fff0e59e'
 ec2 = {}
 ec2_resource = {}
 attachments_to_remove = {}
 ids_to_remove = []
+static_routes ={}
+for tgw_rt in tgw_routeTable_list:
+    static_routes[tgw_rt] = []
 logger.debug(account_id_list)
 for account_id in account_id_list:
     delimiter()
@@ -372,14 +421,6 @@ for account_id in account_id_list:
                     subnet_ids,
                     transit_gateway_id,
                 )
-            vpc_id = tgw_attachment_list[tgw]['VpcId']
-            subnet_ids = tgw_attachment_list[tgw]['SubnetIds']
-            attachment_id = tgw_attachment_list[tgw]['TransitGatewayAttachmentId']
-            create_attachment(
-                vpc_id,
-                subnet_ids,
-                transit_gateway_id,
-            )
     else:
         logger.info(f"Account ID: {account_id}, is being removed from the "
                      "account list."
@@ -392,7 +433,7 @@ for account_id in account_id_list:
         delimiter()
 delimiter()
 logger.info("Waiting...")
-time.sleep(65)
+# time.sleep(65)
 delimiter()
 account_id_list = [ id for id in account_id_list if id not in ids_to_remove ]
 logger.debug(account_id_list)
@@ -415,15 +456,27 @@ for account_id in account_id_list:
                 transit_gateway_id,
                 attachment_id
             )
-filename = (f"Attachments_to_be_removed-{org_label}_org.json")
+            vpc_cidr_list = get_vpc_details(vpc_id)
+            logger.info(vpc_cidr_list)
+            add_tgw_route(vpc_cidr_list,tgw_routeTable_list,
+                          static_route_destination)
+attch_filename = (f"Attachments_to_be_removed-{org_label}_org.json")
+routes_filename = (f"StaticRoutes_added-{org_label}_org.json")
 export_path = (
     f"{userprofile}\\Documents\\AWS_Projects\\Scripts\\Python\\"
      "transit_gateway_attachment_deploy\\"
 )
-completeFilePath = os.path.join(export_path, filename)    
-with open(completeFilePath, "a") as f:
+attch_completeFilePath = os.path.join(export_path, attch_filename)
+routes_completeFilePath = os.path.join(export_path, routes_filename)
+with open(attch_completeFilePath, "a") as f:
     f.write(
         json.dumps(attachments_to_remove, sort_keys=True, indent=4, default=str
         )
     )
+with open(routes_completeFilePath, "a") as f:
+    f.write(
+        json.dumps(static_routes, sort_keys=True, indent=4, default=str
+        )
+    )
+
 
