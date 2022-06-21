@@ -1,8 +1,10 @@
+from unittest import result
 import boto3
 import os
 import time
 import json
 import logging
+import ipaddress
 from datetime import datetime
 from botocore.exceptions import ClientError
 from botocore.exceptions import SSOTokenLoadError
@@ -11,6 +13,10 @@ from botocore.exceptions import UnauthorizedSSOTokenError
 DRY_RUN = True
 OLD_TRANSIT_GATEWAY = 'tgw-06bb3922001900477'
 NEW_TRANSIT_GATEWAY = 'tgw-04dbb41df14fdf4ea'
+CIDR_DESTINATION_EXCEPTIONS = [
+    "10.160.0.0/12",
+    "10.176.0.0/16"
+]
 
 userprofile = os.environ["USERPROFILE"]
 log_path = os.path.dirname(
@@ -65,6 +71,33 @@ def create_logger(logger_name):
     logger.addHandler(file_handler)
     logger.addHandler(console_handler)
     return logger
+
+
+def verify_ip_address(ip_address, subnet_address):
+    try:
+        ip_input = ipaddress.IPv4Address(ip_address)
+        input_type = 'address'
+    except:
+        try:
+            ip_input = ipaddress.IPv4Network(ip_address)
+            input_type = 'network'
+        except:
+            raise
+    response = False
+    if isinstance(subnet_address,list):
+        for subnet in subnet_address:
+            if not response:
+                response = (ip_input in ipaddress.ip_network(subnet)
+                    if input_type == 'address' 
+                    else ip_input.subnet_of(ipaddress.IPv4Network(subnet))
+                )
+    else:
+        # response = ipaddress.ip_address(ip_address) in ipaddress.ip_network(subnet_address)
+        response = (ip_input in ipaddress.ip_network(subnet_address)
+            if input_type == 'address' 
+            else ip_input.subnet_of(ipaddress.IPv4Network(subnet_address))
+        )
+    return response
 
 
 def assume_role(account_identifier, session_name, duration=900):
@@ -458,8 +491,10 @@ for account_id in account_id_list:
             )
             vpc_cidr_list = get_vpc_details(vpc_id)
             logger.info(vpc_cidr_list)
+            vpc_cidr_list = [cidr for cidr in vpc_cidr_list 
+                if not verify_ip_address(cidr,CIDR_DESTINATION_EXCEPTIONS)]
             add_tgw_route(vpc_cidr_list,tgw_routeTable_list,
-                          static_route_destination)
+                        static_route_destination)
 attch_filename = (f"Attachments_to_be_removed-{org_label}_org.json")
 routes_filename = (f"StaticRoutes_added-{org_label}_org.json")
 export_path = (
