@@ -1,4 +1,3 @@
-from unittest import result
 import boto3
 import os
 import time
