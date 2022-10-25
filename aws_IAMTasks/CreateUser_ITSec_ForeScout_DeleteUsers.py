@@ -22,7 +22,7 @@ data_filename = (f"CounterAct-Credentials-"
                    f"{datetime.now().strftime('%Y%m%d-%H%M')}.json")
 export_path = (
     f"{userprofile}\\Documents\\AWS_Projects\\Scripts\\Python\\"
-     "ITSec_ForeScout_Users\\"
+     "CounterACT_User_Creation\\"
 )
 if not os.path.exists(export_path):
     os.makedirs(export_path)
@@ -98,6 +98,7 @@ class Account:
             create_key_response = iam.create_access_key(
                 UserName=username
             )['AccessKey']
+            print("create_key_response: ", create_key_response)
             self.AccessKey = create_key_response['AccessKeyId']
             self.SecretAccessKey = create_key_response['SecretAccessKey']
         except iam.exceptions.LimitExceededException:
@@ -120,10 +121,8 @@ class Account:
             ] 
             )
             self.UserName = username
-            logger.info(f"IAM User Successfully Created!")
             return iam_response['User']['UserName']
         except iam.exceptions.EntityAlreadyExistsException:
-            logger.info(f"A user with the name {username} already Exists!")
             self.UserName = username
             return {'UserName':username}
 
@@ -142,6 +141,45 @@ class Account:
             UserName=self.UserName,
             PolicyArn=policyArn
         )
+        
+    def delete_user(self,userName):
+        iam = self.client_config('iam')
+        userPolicies = iam.list_user_policies(
+            UserName=userName
+        )['PolicyNames']
+        managedPolicies = iam.list_attached_user_policies(
+            UserName=userName
+        )['AttachedPolicies']
+        accessKeys = iam.list_access_keys(
+            UserName=userName
+        )['AccessKeyMetadata']
+        try:
+            if userPolicies:
+                for policy in userPolicies:
+                    iam.delete_user_policy(
+                        UserName=userName,
+                        PolicyName=policy
+                    )
+            if managedPolicies:
+                for manpolicy in managedPolicies:
+                    iam.detach_user_policy(
+                        UserName=userName,
+                        PolicyArn=manpolicy['PolicyArn']
+                    )
+            if accessKeys:
+                for accessKey in accessKeys:
+                    iam.delete_access_key(
+                        UserName=userName,
+                        AccessKeyId=accessKey['AccessKeyId']
+                    )
+            iam.delete_user(
+                UserName=userName
+            )
+        except iam.exceptions.NoSuchEntityException:
+            logger.info("No User exists with this Username. Skipping")
+            return
+        except Exception as e:
+            raise e
 
 
 
@@ -196,26 +234,22 @@ account_ids = {item['Id']:item['Name'] for item in account_list}
 
 for account in account_ids.keys():
     targetAccount = Account(account,session)
-    logger.info(delimiter())
-    logger.info(f"Starting user creation for account with ID {account}. . .")
-    targetAccount.create_user("CounterACT")
-    logger.info(f"Creating Access Key and Secret Key for user. . .")
-    targetAccount.create_key(targetAccount.UserName)
-    targetAccount.ManageOwnKeyPolicy = json.dumps(manageOwnKeyPolicy)
-    targetAccount.attach_policy(targetAccount.ManageOwnKeyPolicy,
-                                "TMK_ManageOwnAccessKey")
-    targetAccount.attach_managed_policy(
-        "arn:aws:iam::aws:policy/AmazonEC2ReadOnlyAccess")
-    logger.info(f"IAM User and Keys created successfully for account "
-           f"with id {account}")
-    credential_list[account_ids[account]]= {
-        "AccountId":account,
-        "Username":targetAccount.UserName,
-        "AccessKey":targetAccount.AccessKey,
-        "SecretAccessKey":targetAccount.SecretAccessKey
-    }
+    # targetAccount.create_user("CounterACT")
+    targetAccount.delete_user("CounterACT")
+#     targetAccount.create_key(targetAccount.UserName)
+#     targetAccount.ManageOwnKeyPolicy = json.dumps(manageOwnKeyPolicy)
+#     targetAccount.attach_policy(targetAccount.ManageOwnKeyPolicy,
+#                                 "TMK_ManageOwnAccessKey")
+#     targetAccount.attach_managed_policy(
+#         "arn:aws:iam::aws:policy/AmazonEC2ReadOnlyAccess")
+#     credential_list[account_ids[account]]= {
+#         "AccountId":account,
+#         "Username":targetAccount.UserName,
+#         "AccessKey":targetAccount.AccessKey,
+#         "SecretAccessKey":targetAccount.SecretAccessKey
+#     }
     
-with open(attch_completeFilePath, "a") as f:
-    f.write(
-        json.dumps(credential_list, indent=4, default=str)
-    )    
+# with open(attch_completeFilePath, "a") as f:
+#     f.write(
+#         json.dumps(credential_list, indent=4, default=str)
+#     )    

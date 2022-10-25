@@ -9,7 +9,7 @@ from botocore.exceptions import SSOTokenLoadError
 from botocore.exceptions import UnauthorizedSSOTokenError
 from py import process
 
-DRY_RUN = True
+DRY_RUN = False
 
 
 userprofile = os.environ["USERPROFILE"]

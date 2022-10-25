@@ -9,12 +9,14 @@ from botocore.exceptions import ClientError
 from botocore.exceptions import SSOTokenLoadError
 from botocore.exceptions import UnauthorizedSSOTokenError
 
-DRY_RUN = True
+DRY_RUN = False
 OLD_TRANSIT_GATEWAY = 'tgw-06bb3922001900477'
 NEW_TRANSIT_GATEWAY = 'tgw-04dbb41df14fdf4ea'
-CIDR_DESTINATION_EXCEPTIONS = [
+CIDR_DESTINATION_EXCEPTIONS = [    
     "10.160.0.0/12",
-    "10.176.0.0/16"
+    "10.176.0.0/16",
+    "10.178.0.0/16",
+    "10.179.0.0/16"
 ]
 
 userprofile = os.environ["USERPROFILE"]
@@ -133,11 +135,14 @@ def get_accounts(root_identifier, parent_filter):
         if ou['Name'] in parent_filter
     ]
     target_account_list = []
+    paginator = org.get_paginator('list_accounts_for_parent')
     for ou_id in target_ou_id_list:
-        list_of_accounts = org.list_accounts_for_parent(
-            ParentId=ou_id
-        )['Accounts']
-        target_account_list.extend(list_of_accounts)
+        page_iterator = paginator.paginate(ParentId=ou_id)
+        for page in page_iterator:
+            target_account_list.extend(page['Accounts'])
+    for account in target_account_list:
+        if account['Status'] == "SUSPENDED":
+            target_account_list.remove(account)
     return target_account_list
 
 
@@ -162,7 +167,7 @@ def route_dict_gen(cidrBlock,destinationId):
 def add_tgw_route(destinationCidr: list, routeTableId: list, destinationId):
     for cidr in destinationCidr:
         for routeTable in routeTableId:
-            try:
+            try:                
                 net_ec2.create_transit_gateway_route(
                     DestinationCidrBlock=cidr,
                     TransitGatewayRouteTableId=routeTable,
@@ -172,7 +177,10 @@ def add_tgw_route(destinationCidr: list, routeTableId: list, destinationId):
                 )
                 static_routes[routeTable].append(route_dict_gen(
                                                     cidr,
-                                                    destinationId))                
+                                                    destinationId))   
+                logger.info(f"Route to CIDR: {destinationCidr} with a "
+                            f"destination of {destinationId}, has been added "
+                            f"to Transit Gateway Route Table: {routeTable}.")             
             except ClientError as e:
                 if e.response['Error']['Code'] == 'DryRunOperation':
                     handle_dry_run(e)
@@ -386,6 +394,7 @@ except (UnauthorizedSSOTokenError, SSOTokenLoadError) as e:
 account_list = get_accounts(root_id, target_ou_list)
 # account_list = [{'Id': '741252614647','Arn': 'arn:aws:organizations::741252614647:account/o-tuwjxnhqr4/741252614647','Email': 'TorchmarkAWS@torchmarkcorp.com','Name': 'Torchmark AWS','Status': 'ACTIVE'},]
 account_id_list = [identifier['Id'] for identifier in account_list]
+logger.info(account_id_list)
 master_list = net_ec2.describe_transit_gateway_vpc_attachments(
         Filters=[
             create_filter('state', ['available'])
@@ -398,8 +407,8 @@ tgw_attachment_list = {
     if tgw['TransitGatewayId'] != transit_gateway_id
 }
 tgw_routeTable_list = ['tgw-rtb-04214dbcfe858b011','tgw-rtb-00d12bf624f48ecc6',
-                       'tgw-rtb-069ac10f7b16adde5','tgw-rtb-0e8c5ebf4a2021914']
-static_route_destination = 'tgw-attach-0a3897f43fff0e59e'
+                       'tgw-rtb-069ac10f7b16adde5']
+static_route_destination = 'tgw-attach-02fffe2df76d38305'
 ec2 = {}
 ec2_resource = {}
 attachments_to_remove = {}
@@ -465,7 +474,7 @@ for account_id in account_id_list:
         delimiter()
 delimiter()
 logger.info("Waiting...")
-# time.sleep(65)
+time.sleep(65)
 delimiter()
 account_id_list = [ id for id in account_id_list if id not in ids_to_remove ]
 logger.debug(account_id_list)
