@@ -9,7 +9,7 @@ from botocore.exceptions import ClientError
 from botocore.exceptions import SSOTokenLoadError
 from botocore.exceptions import UnauthorizedSSOTokenError
 
-DRY_RUN = False
+DRY_RUN = True
 OLD_TRANSIT_GATEWAY = 'tgw-06bb3922001900477'
 NEW_TRANSIT_GATEWAY = 'tgw-04dbb41df14fdf4ea'
 CIDR_DESTINATION_EXCEPTIONS = [    
