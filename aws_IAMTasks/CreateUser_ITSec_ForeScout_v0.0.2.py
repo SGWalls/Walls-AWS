@@ -8,7 +8,7 @@ from botocore.exceptions import ClientError
 from botocore.exceptions import SSOTokenLoadError
 from botocore.exceptions import UnauthorizedSSOTokenError
 
-
+#testing git update
 userprofile = os.environ["USERPROFILE"]
 log_path = os.path.dirname(
     f"{userprofile}\\Documents\\AWS_Projects\\Scripts\\Python\\"
