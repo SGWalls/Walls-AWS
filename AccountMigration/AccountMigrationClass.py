@@ -445,7 +445,7 @@ if __name__ == "__main__":
                 identifier=accnt.ou['Name']
                 )
             )
-        time.sleep(5)
+        time.sleep(10)
         logger.info("Beginning update of ResolverRules for Account VPCs...")
         accnt.update_resolver_rule(accnt.vpcs)
         

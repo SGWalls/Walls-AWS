@@ -68,11 +68,12 @@ def delimiter(symbol='='):
     logger.info(symbol * 120)
 
 def lambda_handler(event, context):
+    logger.info(event)
     try:
         account_id = event["detail"]["serviceEventDetails"]["createManagedAccountStatus"]["account"]["accountId"]
     except KeyError:
         print(f"Unable to get an account Id from this event: {event}")
         return
 
-    accnt = Account(account_id=account_id,region=region)
-    accnt.s3_account_pab()
+    target_account = Account(account_id=account_id,region=region)
+    target_account.s3_account_pab()
