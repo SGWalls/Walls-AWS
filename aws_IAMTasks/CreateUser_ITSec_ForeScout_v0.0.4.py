@@ -2,9 +2,7 @@ import boto3
 import json
 import os
 import logging
-import time
 from datetime import datetime, timezone, timedelta
-from botocore.exceptions import ClientError
 from botocore.exceptions import SSOTokenLoadError
 from botocore.exceptions import UnauthorizedSSOTokenError
 
