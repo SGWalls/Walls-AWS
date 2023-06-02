@@ -1,6 +1,6 @@
 import boto3
-import datetime
-from datetime import datetime
+# import datetime
+from datetime import datetime, timezone
 import logging
 import os
 import sys
@@ -8,43 +8,6 @@ sys.path.insert(1,os.getcwd())
 from helpers.Account import Account
 
 ASSUMED_ROLE = "AWSControlTowerExecution" 
-
-
-# class Account():
-#     def __init__(
-#             self, account_id, logger, role_name=ASSUMED_ROLE,
-#             region="us-west-2"):
-#         self.logger = logger
-#         self.accountid = account_id        
-#         self.rolename = role_name
-#         self.session = boto3.session.Session(
-#             aws_access_key_id = self.credentials['AccessKeyId'],
-#             aws_secret_access_key = self.credentials['SecretAccessKey'],
-#             aws_session_token = self.credentials['SessionToken'],
-#             region_name=region
-#         )
-#         self.credentials = self.assume_role(self.accountid,
-#                                             "EBSSnapshotManagement")
-        
-
-#     def assume_role(self,account_id,session_name,duration=900):
-#         response = self.session.client("sts").assume_role(
-#             RoleArn=f"arn:aws:iam::{account_id}:role/{self.rolename}",
-#             RoleSessionName=session_name,
-#             DurationSeconds=duration
-#         )
-#         return response['Credentials']
-    
-#     def client_config(self,creds,service,region="us-west-2"):
-#         response = boto3.session.Session().client(
-#             aws_access_key_id = creds['AccessKeyId'],
-#             aws_secret_access_key = creds['SecretAccessKey'],
-#             aws_session_token = creds['SessionToken'],
-#             region_name = region,
-#             service_name = service
-#         )
-#         return response
-
 
 def create_logger(logger_name,log_path,log_file_name):
     logger = logging.getLogger(logger_name)
@@ -61,7 +24,7 @@ def create_logger(logger_name,log_path,log_file_name):
     logger.addHandler(console_handler)
     return logger
 
-
+print("Step 1: Start . . .")
 userprofile = os.environ["USERPROFILE"]
 log_path = os.path.dirname(
     f"{userprofile}\\Documents\\AWS_Projects\\Scripts\\Python\\"
@@ -76,7 +39,7 @@ session = boto3.Session(profile_name='ct_master',region_name='us-west-2')
 Aws_Account = Account('059004262227',session,'EBSSnapshotMaintenance')
 # session = boto3.Session(profile_name='dev_devops',region_name='us-west-2')
 # ec2 = session.client('ec2')
-
+print("Step 2 : Setting Paginator...")
 paginator = Aws_Account.client_config('ec2').get_paginator('describe_snapshots')
 page_iterator = paginator.paginate(
     OwnerIds=[
@@ -84,9 +47,13 @@ page_iterator = paginator.paginate(
         ]
 )
 in_scope_snaps = []
+print("Step 3 : Running Paginator and iterating Pages...")
+
 for page in page_iterator:
     for snapshot in page['Snapshots']:
-        current_time = datetime.datetime.now(datetime.timezone.utc)
+        current_time = datetime.now(timezone.utc)
         if (current_time - snapshot['StartTime']).days > 60:
             in_scope_snaps.append(snapshot)
+print("Step 4 : Iterations complete. Printing result.")
+
 print(len(in_scope_snaps))

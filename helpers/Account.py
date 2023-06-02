@@ -12,15 +12,15 @@ class Account:
                  region="us-west-2"):
         self.region = region
         self.sessionName = sessionName
-        self.session = session if session else boto3
+        self.session = session if session else boto3.Session()
         self.account_id = account_id 
         self.credentials = self.get_credentials()
 
     def get_caller_account(self):
         try:
             return self.session.client('sts').get_caller_identity().get('Account')
-        except (UnauthorizedSSOTokenError, SSOTokenLoadError) as e:
-            if "expired or is otherwise invalid" in str(e):
+        except Exception as e:
+            if "expired" in str(e):
                 delimiter()
                 logger.info(e)
                 logger.info("Reinitiating SSO Login...")
@@ -54,9 +54,8 @@ class Account:
             region_name = self.region,
         )
 
-if __name__ == "__main__":
 
-    def delimiter(symbol='='):
-        logger.info(symbol * 120)
+def delimiter(symbol='='):
+    logger.info(symbol * 120)
 
-    logger = logging.getLogger('Logging')
+logger = logging.getLogger('Logging')
