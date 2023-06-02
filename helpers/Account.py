@@ -8,8 +8,10 @@ from botocore.exceptions import UnauthorizedSSOTokenError
 
 
 class Account:
-    def __init__(self, account_id=None, session=None, region="us-west-2"):
+    def __init__(self, account_id=None, session=None, sessionName='AdminTask',
+                 region="us-west-2"):
         self.region = region
+        self.sessionName = sessionName
         self.session = session if session else boto3
         self.account_id = account_id 
         self.credentials = self.get_credentials()
@@ -26,7 +28,7 @@ class Account:
                 return self.session.client('sts').get_caller_identity().get('Account')
 
     def get_credentials(self):
-        return self.assume_role('s3_SetPublicAccessBlock') if (
+        return self.assume_role(self.sessionName) if (
             self.account_id != self.get_caller_account()) else {
                 'AccessKeyId':None,
                 'SecretAccessKey':None,
@@ -52,6 +54,9 @@ class Account:
             region_name = self.region,
         )
 
+if __name__ == "__main__":
 
-def delimiter(symbol='='):
-    logger.info(symbol * 120)
+    def delimiter(symbol='='):
+        logger.info(symbol * 120)
+
+    logger = logging.getLogger('Logging')
