@@ -363,8 +363,9 @@ def getAuthToken(username, password):
     creds['username'] = username
     creds['password'] = password
     creds['grant_type'] = 'password'
+    mfaOtp = input("Enter your OTP for 2fa: ")
     uri = sssite + ssauthApi
-    headers = {'Accept': 'application/json', 'content-type': 'application/x-www-form-urlencoded'}
+    headers = {'Accept': 'application/json', 'content-type': 'application/x-www-form-urlencoded', 'OTP': mfaOtp}
     resp = requests.post(uri, data=creds, headers=headers)
     if resp.status_code not in (200, 304):
         raise Exception(
@@ -660,10 +661,7 @@ token = getAuthToken(username,password)
 print("Authentication successful.\n")
 catalogs = {
 	'lnl-mainframe': [		
-        'alis-master',
-        'bi-issuepnd',
-        'alis-histfile',
-        'issue-pending'
+        'exam'
 	]
 }
 

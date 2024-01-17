@@ -66,8 +66,13 @@ def test_token(session):
     client = session.client('sts')
     try:
         client.get_caller_identity()
-    except (UnauthorizedSSOTokenError, SSOTokenLoadError) as e:
+    except Exception as e:
         if "expired or is otherwise invalid" in str(e):
+            delimiter()
+            logger.info(e)
+            logger.info("Reinitiating SSO Login...")
+            os.system(f"aws sso login --profile {session.profile_name}")
+        elif "Token has expired and refresh failed" in str(e):
             delimiter()
             logger.info(e)
             logger.info("Reinitiating SSO Login...")
@@ -117,7 +122,8 @@ updated_accounts ={'Accounts': []}
 pub_lbs = {}
 for page in iterator:
     for account in page['Accounts']:
-        accounts.append(account['Id'])
+        if account['Status'] == 'ACTIVE':
+            accounts.append(account['Id'])
 
 for account in accounts:
     logger.info(f"Beginning to process Account: {account}")
