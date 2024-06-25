@@ -9,9 +9,9 @@ from botocore.exceptions import ClientError
 from botocore.exceptions import SSOTokenLoadError
 from botocore.exceptions import UnauthorizedSSOTokenError
 
-DRY_RUN = True
+DRY_RUN = False
 OLD_TRANSIT_GATEWAY = 'tgw-06bb3922001900477'
-NEW_TRANSIT_GATEWAY = 'tgw-04dbb41df14fdf4ea'
+NEW_TRANSIT_GATEWAY = 'tgw-0ea352e72aa369198'
 CIDR_DESTINATION_EXCEPTIONS = [    
     "10.160.0.0/12",
     "10.176.0.0/16",
@@ -333,6 +333,7 @@ def create_attachment(vpcid=None, subnet_identifiers=None,
 
     return
 
+
 logger = create_logger('tgw_a_logger')
 root_id = input("Target the Legacy or Control Tower Organization? "
                 "(Enter 'leg' or 'ct'): ")
@@ -353,13 +354,24 @@ vpc_exclusion_input = input(
     "(Separate multiple values with a space): "
 )
 vpc_exclusion_list = vpc_exclusion_input.split(' ')
+vpc_exclusion_list.extend(
+    [
+        'vpc-08ccf9ad06451c082',
+        'vpc-0d0c982e02b051433',
+        'vpc-0416722b167ba5ad1',
+        'vpc-090fcdea051c26c1e',
+        'vpc-01ac5c7102063ec3d',
+        'vpc-0db19012211abc0a5',
+        'vpc-057346dd43a30978e'
+    ]
+)
 region = 'us-west-2'
 
 if root_id == "ct":
     root_id = "r-mdy1"
     role_name = 'AWSControlTowerExecution'
     session = boto3.session.Session(
-        profile_name='ct_master',
+        profile_name='ct_mstr',
         region_name=region
     )
     org_label = 'ct'    
@@ -382,6 +394,14 @@ sts_client = session.client('sts')
 net_session = boto3.session.Session(profile_name='net_svc', region_name=region)
 net_ec2 = net_session.client('ec2')
 net_sts_client = net_session.client('sts')
+# net_credentials = assume_role(
+#             '499166352453',
+#             session_name='deploy-transit-gateway-attachment'
+#         )
+# net_ec2 = boto3.client('ec2',
+#                         **net_credentials,
+#                         region_name=region
+#                         )
 try:
     token_test = net_sts_client.get_caller_identity()
 except (UnauthorizedSSOTokenError, SSOTokenLoadError) as e:
@@ -391,8 +411,9 @@ except (UnauthorizedSSOTokenError, SSOTokenLoadError) as e:
         logger.info("Reinitiating SSO Login...")
         os.system(f"aws sso login --profile {net_session.profile_name}")
 
-account_list = get_accounts(root_id, target_ou_list)
+# account_list = get_accounts(root_id, target_ou_list)
 # account_list = [{'Id': '741252614647','Arn': 'arn:aws:organizations::741252614647:account/o-tuwjxnhqr4/741252614647','Email': 'TorchmarkAWS@torchmarkcorp.com','Name': 'Torchmark AWS','Status': 'ACTIVE'},]
+account_list = [{'Id': '662627786878','Arn': 'arn:aws:organizations::662627786878:account/o-w3wk3dircz/662627786878','Email': 'AWS_GlobeLife@globe.life','Name': 'Globe Life','Status': 'ACTIVE'},]
 account_id_list = [identifier['Id'] for identifier in account_list]
 logger.info(account_id_list)
 master_list = net_ec2.describe_transit_gateway_vpc_attachments(
@@ -501,8 +522,8 @@ for account_id in account_id_list:
             logger.info(vpc_cidr_list)
             vpc_cidr_list = [cidr for cidr in vpc_cidr_list 
                 if not verify_ip_address(cidr,CIDR_DESTINATION_EXCEPTIONS)]
-            add_tgw_route(vpc_cidr_list,tgw_routeTable_list,
-                        static_route_destination)
+            # add_tgw_route(vpc_cidr_list,tgw_routeTable_list,
+                        # static_route_destination)
 attch_filename = (f"Attachments_to_be_removed-{org_label}_org.json")
 routes_filename = (f"StaticRoutes_added-{org_label}_org.json")
 export_path = (

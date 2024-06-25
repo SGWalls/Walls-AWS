@@ -1,15 +1,13 @@
-import boto3
 from aws_cdk.aws_iam import PolicyStatement, Effect as eff, PolicyDocument
-import os
-import time
+import inquirer
 import json
-import logging
-from datetime import datetime
-from botocore.exceptions import ClientError
-from botocore.exceptions import SSOTokenLoadError
-from botocore.exceptions import UnauthorizedSSOTokenError
+import os
 from IAM_Policies import Policies
 
+userprofile = os.environ["USERPROFILE"]
+import_path = (
+    f"{userprofile}\\Documents\\AWS_Projects\\AWS_IAM\\IAM_PolicyStatements\\"
+)
 
 def add_access(Sid=None,Effect='Deny',Action=None,Resource=None,
                Principal=None,Condition=None, *args, **kwargs):
@@ -37,15 +35,24 @@ def add_access(Sid=None,Effect='Deny',Action=None,Resource=None,
             params[k] = [v]
     return PolicyStatement(**params)
 
-access_input = input("Name of the Access Policies to use: ")
-access_list = access_input.split(',')
+def import_file(filename, filedir=import_path):
+    statement_import = os.path.join(filedir, filename)
+    with open(statement_import) as json_file:
+            return json.load(json_file) 
+
+questions = [
+    inquirer.Checkbox('policyChoices',
+                      message="What are you interested in?",
+                      choices=os.listdir(import_path)
+                    ),
+]
+access_list = inquirer.prompt(questions)['policyChoices']
+# access_input = input("Name of the Access Policies to use: ")
+# access_list = access_input.split(',')
 iam_policy=PolicyDocument()
-userprofile = os.environ["USERPROFILE"]
-import_path = (
-    f"{userprofile}\\Documents\\AWS_Projects\\AWS_IAM\\IAM_PolicyStatements\\"
-)
 for file in access_list:
-    statement_doc = getattr(Policies, file)
+    # statement_doc = getattr(Policies, file)
+    statement_doc = import_file(file)
     if isinstance(statement_doc,list):
         for statement in statement_doc: 
             iam_policy.add_statements(add_access(**statement))

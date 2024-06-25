@@ -1,3 +1,5 @@
+#### Unfinished.  Does not work ####
+
 import boto3
 import os
 import logging
@@ -69,7 +71,9 @@ def delimiter(symbol='='):
 
 serviceName = input("Name of the Service needing an endpoint: ")
 service = f"com.amazonaws.{region}.{serviceName}"
-
+session = boto3.Session()
+ec2 = session.client('ec2')
+try:
     ec2.create_vpc_endpoint(
         DryRun=True|False,
         VpcEndpointType='Interface'|'Gateway'|'GatewayLoadBalancer',
@@ -103,3 +107,5 @@ service = f"com.amazonaws.{region}.{serviceName}"
             },
         ]
     )
+except Exception as error:
+    print('An exception occured: {}'.format(error))

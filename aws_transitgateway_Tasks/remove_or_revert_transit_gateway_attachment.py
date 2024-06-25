@@ -75,8 +75,8 @@ def test_token(session):
     client = session.client('sts')
     try:
         client.get_caller_identity()
-    except (UnauthorizedSSOTokenError, SSOTokenLoadError) as e:
-        if "expired or is otherwise invalid" in str(e):
+    except Exception as e:
+        if "expired" in str(e):
             delimiter()
             logger.info(e)
             logger.info("Reinitiating SSO Login...")
@@ -218,8 +218,8 @@ routes_completeFilePath = os.path.join(import_path, routes_filename)
 
 with open(attch_completeFilePath) as json_file:
     attachments = json.load(json_file)
-with open(routes_completeFilePath) as json_file:
-    static_routes = json.load(json_file)
+# with open(routes_completeFilePath) as json_file:
+#     static_routes = json.load(json_file)
 
 for account in attachments:
     if account != session.client('sts').get_caller_identity()['Account']:

@@ -661,7 +661,8 @@ token = getAuthToken(username,password)
 print("Authentication successful.\n")
 catalogs = {
 	'lnl-mainframe': [		
-        'exam'
+        'bankfile',
+        'banksupp'
 	]
 }
 

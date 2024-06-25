@@ -86,7 +86,7 @@ accounts = []
 updated_accounts ={'Accounts': []}
 for page in iterator:
     for account in page['Accounts']:
-        accounts.append(account['Id'])
+        accounts.append(account)
 
 permissionSetArn = input("Enter the Permission Set ID to be depoloyed: ")
 permissionSetArn = f"arn:aws:sso:::permissionSet/ssoins-79079927a28f782f/{permissionSetArn}"
@@ -96,17 +96,18 @@ groupId = input("Enter the ID of the Principal that will be delgated access: ")
 
 ctSSO = SSOInstance(SSO_INSTANCE,session)
 for account in accounts:
-    accnt1 = Account(account,ctSSO)
+    accnt1 = Account(account['Id'],ctSSO)
     accnt1.inScope = True
     accnt1.assignments = accnt1.list_account_assignments(permissionSetArn)
     if accnt1.assignments['AccountAssignments']:
         for assignment in accnt1.assignments['AccountAssignments']:
             if assignment['PrincipalId'] == groupId:
-                print(f"removing account {account} from scope")
+                # print(f"removing account {account} from scope")
                 accnt1.inScope = False
     if accnt1.inScope:
-        print(f"adding permissions set to account {account}")
-        ctSSO.create_account_assignment(accnt1.accountId,
-                                        permissionSetArn,
-                                        groupId)
-
+        # print(f"adding permissions set to account {account}")
+        # ctSSO.create_account_assignment(accnt1.accountId,
+        #                                 permissionSetArn,
+        #                                 groupId)
+        print(f"Permission not deployed to Account {account['Name']} : {account['Id']}")
+    
