@@ -5,10 +5,7 @@ import logging
 import pandas as pd
 from datetime import datetime
 
-"""
-Represents an AWS account and provides methods for assuming roles
-and creating service clients with the appropriate credentials.
-"""
+
 class Account():
     def __init__(self, account_id=None, session=None, sessionName='AdminTask',
                  region="us-west-2"):
