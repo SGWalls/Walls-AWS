@@ -1,0 +1,4 @@
+,Name,Type,TTL,Value
+0,6zrjvrydvhdfd6eh33xhbhm4mbvhq4tl._domainkey.impactnotifications.ailife.com.,CNAME,300,6zrjvrydvhdfd6eh33xhbhm4mbvhq4tl.dkim.amazonses.com
+1,dbtk4ghhgswha4bstenvnfhvsd6y4snd._domainkey.impactnotifications.ailife.com.,CNAME,300,dbtk4ghhgswha4bstenvnfhvsd6y4snd.dkim.amazonses.com
+2,tb75mb6oisphhynhnvu6ysvk5saedqt4._domainkey.impactnotifications.ailife.com.,CNAME,300,tb75mb6oisphhynhnvu6ysvk5saedqt4.dkim.amazonses.com

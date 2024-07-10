@@ -1,0 +1,6 @@
+,Name,Type,TTL,Value
+0,impact.ailife.com.,A,N/A,dualstack.impact-pub-prd-1194807823.us-west-2.elb.amazonaws.com.
+1,mod.impact.ailife.com.,A,N/A,dualstack.impact-pub-prd-1194807823.us-west-2.elb.amazonaws.com.
+2,modsvc.impact.ailife.com.,A,N/A,dualstack.internal-impact-svc-prd-1396943911.us-west-2.elb.amazonaws.com.
+3,rpt.impact.ailife.com.,A,N/A,dualstack.impact-pub-prd-1194807823.us-west-2.elb.amazonaws.com.
+4,rptsvc.impact.ailife.com.,A,N/A,dualstack.internal-impact-svc-prd-1396943911.us-west-2.elb.amazonaws.com.

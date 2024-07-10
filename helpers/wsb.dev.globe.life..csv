@@ -1,0 +1,4 @@
+,Name,Type,TTL,Value
+0,64awx6h4zhbji425tard6ja4hbarmtx7._domainkey.wsb.dev.globe.life.,CNAME,300,64awx6h4zhbji425tard6ja4hbarmtx7.dkim.amazonses.com
+1,k3wwodsmqnyyfksmdn4iaeb3ezy4rmgm._domainkey.wsb.dev.globe.life.,CNAME,300,k3wwodsmqnyyfksmdn4iaeb3ezy4rmgm.dkim.amazonses.com
+2,webnvnnbfx5hhpbsajfhcl74oqb6vhmd._domainkey.wsb.dev.globe.life.,CNAME,300,webnvnnbfx5hhpbsajfhcl74oqb6vhmd.dkim.amazonses.com

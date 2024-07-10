@@ -1,0 +1,3 @@
+,Name,Type,TTL,Value
+0,partd.dev.globelifeinc.com.,A,N/A,internal-partd-pri-dev-282882501.us-west-2.elb.amazonaws.com.
+1,_315db0ebed829dc76d3f25a9bed90f1b.partd.dev.globelifeinc.com.,CNAME,300,_f81b8f0e684a1b5c976607be6e42c762.cnsgthfrdk.acm-validations.aws.

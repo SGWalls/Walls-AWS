@@ -1,0 +1,3 @@
+,Name,Type,TTL,Value
+0,_85f90ed54e74ad1d78a37d440d61d6b5.nbuwintegration.stg.globelifeinc.com.,CNAME,300,_9dc76ec3fe013f179635a355b3c3f39e.hkmpvcwbzw.acm-validations.aws.
+1,api.nbuwintegration.stg.globelifeinc.com.,A,N/A,d-2xsnbh5y44.execute-api.us-west-2.amazonaws.com.

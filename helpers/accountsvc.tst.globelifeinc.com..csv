@@ -1,0 +1,3 @@
+,Name,Type,TTL,Value
+0,_d1e9ad1e27bad055663099427cad134d.accountsvc.tst.globelifeinc.com.,CNAME,300,_fef9fe34dad924bb3f12e0d991a9926f.fbnrgqtmtt.acm-validations.aws.
+1,api.accountsvc.tst.globelifeinc.com.,A,N/A,d-glfllfcril.execute-api.us-west-2.amazonaws.com.

@@ -1,0 +1,4 @@
+,Name,Type,TTL,Value
+0,_b9d4ac7359c764b219e5f4210068d698.eapp-ai.stg.globelifeinc.com.,CNAME,300,_f1834c59a4206b1af549870a2e2797b2.tfmgdnztqk.acm-validations.aws.
+1,agentapi.eapp-ai.stg.globelifeinc.com.,A,N/A,d-ykiq0ruvse.execute-api.us-west-2.amazonaws.com.
+2,signingserviceapi.eapp-ai.stg.globelifeinc.com.,A,N/A,d-mfnn7jv7kd.execute-api.us-west-2.amazonaws.com.

@@ -1,0 +1,3 @@
+,Name,Type,TTL,Value
+0,partd.tst.globelifeinc.com.,A,N/A,internal-partd-pri-tst-788975976.us-west-2.elb.amazonaws.com.
+1,_15c72dc0382d3036988ba932ad5129cb.partd.tst.globelifeinc.com.,CNAME,300,_aff6616d547e26f33ac76726d37d123c.cnsgthfrdk.acm-validations.aws.

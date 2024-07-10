@@ -1,0 +1,3 @@
+,Name,Type,TTL,Value
+0,_7c084f4adb4a43173509ef14fcb8c6eb.globeiqexternal.tst.globelifeinc.com.,CNAME,300,_fae4cdbde6a9b7d871c80ae97085790d.mypsmwccwx.acm-validations.aws.
+1,api.globeiqexternal.tst.globelifeinc.com.,A,N/A,d-iuir5ntud9.execute-api.us-west-2.amazonaws.com.

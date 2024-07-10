@@ -239,7 +239,7 @@ class Master():
                 delimiter()
                 logger.info(e)
                 logger.info("Reinitiating SSO Login...")
-                os.system(f"aws sso login --profile {self.session.profile_name}")
+                subprocess.run(shlex.split(f"aws sso login --profile {self.session.profile_name}")) # import subprocess, shlex
                 return self.session.client('sts').get_caller_identity().get('Account')
 
     def invite_account(self,identifier):        
