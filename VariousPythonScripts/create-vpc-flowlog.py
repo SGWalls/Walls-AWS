@@ -2,6 +2,7 @@ import boto3
 import json
 import os
 import logging
+import subprocess, shlex
 from botocore.exceptions import ClientError
 from botocore.exceptions import SSOTokenLoadError
 from botocore.exceptions import UnauthorizedSSOTokenError
@@ -63,7 +64,7 @@ def test_token(session=boto3):
             delimiter()
             logger.info(e)
             logger.info("Reinitiating SSO Login...")
-            os.system(f"aws sso login --profile {session.profile_name}")
+            subprocess.run(shlex.split(f"aws sso login --profile {session.profile_name}"))
     return 
 
 def check_input(inpt: str):
