@@ -71,7 +71,6 @@ class HostedZones():
     def get_hosted_zones(self):
         paginator = self.client.get_paginator('list_hosted_zones')
         all_hosted_zones = []
-
         for page in paginator.paginate():
             all_hosted_zones.extend(page['HostedZones'])
 
@@ -81,10 +80,8 @@ class HostedZones():
     def get_resource_records(self, zone_id):
         paginator = self.client.get_paginator('list_resource_record_sets')
         all_records = []
-
         for page in paginator.paginate(HostedZoneId=zone_id):
             all_records.extend(page['ResourceRecordSets'])
-
         return all_records
 
     def get_zone_id(self, zone_name):
@@ -154,10 +151,14 @@ timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
 output_file = os.path.join(file_location, f'all_hosted_zones_{timestamp}.csv')
 all_dfs = []
 
-
 # generate account list, iterate through accounts to retrieve hosted zones and resource records
 account_list = get_accounts(session)
-account_list.append({'Id': '741252614647', 'Email': 'torchmarkaws_aws@torchmarkcorp.com', 'Name': 'Torchmark AWS', 'Status': 'ACTIVE'})
+account_list.append(
+    {'Id': '741252614647', 
+     'Email': 'torchmarkaws_aws@torchmarkcorp.com', 
+     'Name': 'Torchmark AWS', 
+     'Status': 'ACTIVE'
+    })
 for account in account_list:
     account = Account(account_id=account['Id'], session=session)
     hosted_zones = HostedZones(account)
@@ -169,8 +170,6 @@ for account in account_list:
                 df = hosted_zones.format_resource_records(records,zone['Name'])
                 print(df)
                 all_dfs.append(df)
-
-
 
 combined_df = pd.concat(all_dfs, ignore_index=True)
 combined_df.to_csv(output_file, index=False)
