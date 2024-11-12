@@ -1,0 +1,37 @@
+import subprocess, shlex
+import logging 
+import botocore
+
+logger = logging.getLogger(__name__)
+
+def validate_sso_token(session):
+    """
+    Validates if the AWS SSO token for a given session is still valid.
+    Triggers login if token is expired or invalid.
+    
+    Args:
+        session (str): The session object to validate
+    
+    Returns:
+        bool: True if valid session established, False otherwise
+    """
+    try:
+        # Try to create a session with the profile
+        sts = session.client('sts')
+        
+        # Test the credentials by making a simple API call
+        sts.get_caller_identity()
+        return True
+    except botocore.exceptions.TokenRetrievalError as e:
+        logger.info(e)
+        logger.info(f"SSO token for profile {session.profile_name} is expired or invalid. Initiating login...")
+        try:
+            # Run the SSO login command
+            # subprocess.run(['aws', 'sso', 'login', '--profile', profile_name], check=True)
+            subprocess.run(shlex.split(
+                f"aws sso login --profile {session.profile_name}"
+            ))
+            return True
+        except subprocess.CalledProcessError as sso_error:
+            logger.info(f"Failed to login with SSO: {sso_error}")
+            return False

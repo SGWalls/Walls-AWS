@@ -83,6 +83,8 @@ session = boto3.session.Session(
 sts = session.client('sts')
 test_token(session)
 
+parameters = json.loads(template)['Parameters']
+
 for account in accounts:
     if not check_format(account):
         continue
