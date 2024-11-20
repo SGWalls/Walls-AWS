@@ -100,7 +100,7 @@ if __name__ == "__main__":
             cloudformation.create_stack(
                 StackName=stack_name,
                 TemplateBody=template,
-                Parameters=new_parameters,
+                Parameters=new_parameters if new_parameters else None,
                 Capabilities=[
                     'CAPABILITY_NAMED_IAM'
                 ]

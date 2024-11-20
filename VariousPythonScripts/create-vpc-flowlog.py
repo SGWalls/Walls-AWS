@@ -146,16 +146,24 @@ policy = json.dumps({
         }
     ]
 })
-Role = iam.create_role(
+try:
+    Role = iam.create_role(
+            RoleName="flowlogsRole",
+            AssumeRolePolicyDocument=trust_policy,
+            Description='Role used for Flow Log collection'
+        )['Role']
+    iam.put_role_policy(
         RoleName="flowlogsRole",
-        AssumeRolePolicyDocument=trust_policy,
-        Description='Role used for Flow Log collection'
-    )['Role']
-iam.put_role_policy(
-    RoleName="flowlogsRole",
-    PolicyName="FlowLogsAccess",
-    PolicyDocument=policy
-)
+        PolicyName="FlowLogsAccess",
+        PolicyDocument=policy
+    )
+except ClientError as e:
+    if e.response['Error']['Code'] == 'EntityAlreadyExists':
+        Role = iam.get_role(
+            RoleName="flowlogsRole"
+        )['Role']
+    else:
+        raise e
 logs.create_log_group(
     logGroupName=log_group_name
 )

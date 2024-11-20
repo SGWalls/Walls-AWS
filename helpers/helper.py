@@ -22,7 +22,8 @@ def validate_sso_token(session):
         # Test the credentials by making a simple API call
         sts.get_caller_identity()
         return True
-    except botocore.exceptions.TokenRetrievalError as e:
+    except (botocore.exceptions.TokenRetrievalError, 
+            botocore.exceptions.UnauthorizedSSOTokenError) as e:
         logger.info(e)
         logger.info(f"SSO token for profile {session.profile_name} is expired or invalid. Initiating login...")
         try:
