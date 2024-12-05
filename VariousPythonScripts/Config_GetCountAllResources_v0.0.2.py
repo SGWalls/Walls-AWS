@@ -4,7 +4,7 @@ import csv
 from datetime import datetime
 import os
 
-def get_all_resource_counts(region='us-east-1'):
+def get_all_resource_counts(region='us-west-2'):
     """
     Get the count of resources for all supported AWS services using AWS Config aggregator.
 
@@ -13,14 +13,14 @@ def get_all_resource_counts(region='us-east-1'):
     """
     try:
         # Create a boto3 session
-        session = boto3.Session(profile_name='master',region_name=region)
+        session = boto3.Session(profile_name='gloca_audit',region_name=region)
         
         # Create a client for AWS Config
         config_client = session.client('config')
         
         # Get the resource counts using the aggregator
         response = config_client.get_aggregate_discovered_resource_counts(
-            ConfigurationAggregatorName='TMK_Organization_Aggregator',
+            ConfigurationAggregatorName='aws-controltower-GuardrailsComplianceAggregator',
             # Filters={
             #     'ResourceType': ['AWS::AllSupported']
             # },
@@ -95,7 +95,7 @@ if __name__ == "__main__":
     export_path = os.path.dirname(
         f"{userprofile}\\Documents\\AWS_Projects\\Exports\\config\\"
     )
-    export_file_name = f"config-resourceCounts-{datetime.now().strftime('%Y%m%d')}.csv"
+    export_file_name = f"GLOCA-config-resourceCounts-{datetime.now().strftime('%Y%m%d')}.csv"
     if not os.path.exists(export_path):
         os.makedirs(export_path)
 

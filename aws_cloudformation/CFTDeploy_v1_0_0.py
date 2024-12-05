@@ -11,8 +11,6 @@ from botocore.exceptions import SSOTokenLoadError
 from botocore.exceptions import UnauthorizedSSOTokenError
 
 
-
-
 def test_token(session):
     client = session.client('sts')
     try:
@@ -25,14 +23,39 @@ def test_token(session):
             os.system(f"aws sso login --profile {session.profile_name}")
     return 
 
+# function to validate AWS account id is correct format
+def check_accountid_format(accountId):
+    if not isinstance(accountId, str):
+        raise TypeError("Account ID must be a string")
+    if (len(accountId) == 12 and accountId.isdigit()):
+        return True
+    else:
+        print("Account ID is INVALID!")
+        return False
+    
+def get_sts_client(session=None):
+    if session is None:
+        session = boto3.Session()
+    return session.client('sts')
 
-def assume_role(account_id, session_name, duration=900):        
-    response = sts.assume_role(
-        RoleArn=f"arn:aws:iam::{account_id}:role/AWSControlTowerExecution",
-        RoleSessionName=session_name,
-        DurationSeconds=duration
-    )
-    return response['Credentials']
+def assume_role(account_id, session_name, duration=900):
+    if not session_name:
+        raise ValueError("RoleSessionName must be provided")
+
+    if not check_accountid_format(account_id):
+        raise ValueError("Invalid account_id format")
+    
+    sts = get_sts_client()
+    
+    try:
+        response = sts.assume_role(
+            RoleArn=f'arn:aws:iam::{account_id}:role/AWSControlTowerExecution',
+            RoleSessionName=session_name,
+            DurationSeconds=duration
+        )
+        return response['Credentials']
+    except ClientError:
+        raise
 
 
 def client_config(creds,service,region='us-west-2'):
@@ -117,7 +140,7 @@ if __name__ == "__main__":
     for account in accounts:
         if not check_format(account):
             continue
-        credentials = assume_role(account,"cloudFormationDeploy")
+        credentials = assume_role(account,"cloudFormationDeploy",session=session)
         cloudformation = client_config(credentials,"cloudformation")
         try:
             stack_map = {stack['StackName'].lower():stack['StackName'] for stack in cloudformation.list_stacks()['StackSummaries']}

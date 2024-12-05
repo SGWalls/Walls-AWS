@@ -36,3 +36,16 @@ def validate_sso_token(session):
         except subprocess.CalledProcessError as sso_error:
             logger.info(f"Failed to login with SSO: {sso_error}")
             return False
+    except Exception as e:
+        logger.info(e)
+
+def get_org_account_list(session):
+    client = session.client('organizations')
+    validate_sso_token(session)
+    accounts = []
+    response = client.list_accounts()
+    accounts.extend([account for account in response['Accounts'] if account['Status'] == 'ACTIVE'])
+    while 'NextToken' in response:
+        response = client.list_accounts(NextToken=response['NextToken'])
+        accounts.extend([account for account in response['Accounts'] if account['Status'] == 'ACTIVE'])
+    return accounts

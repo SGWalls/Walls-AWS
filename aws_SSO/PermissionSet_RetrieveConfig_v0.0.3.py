@@ -93,23 +93,23 @@ while 'NextToken' in response:
     response = sso.list_permission_sets(InstanceArn=instance_arn, MaxResults=100, NextToken=response['NextToken'])
     permission_sets.extend(response['PermissionSets'])
 
+for permission_set_arn in permission_sets:
+    # permission_set_arn = permission_sets[0]
 
-permission_set_arn = permission_sets[0]
+    access_kwargs = get_permission_set_access(session, instance_arn, permission_set_arn)
 
-access_kwargs = get_permission_set_access(session, instance_arn, permission_set_arn)
+    if access_kwargs:
+        print("Permission set access details:")
+        # for key, value in access_kwargs.items():
+        #     print(f"{key}: {value}")
+        permissionSet = PermissionSet(**access_kwargs)
+        pprint(permissionSet.__dict__, width=100, sort_dicts=False)
+        # pprint(access_kwargs, width=100, sort_dicts=False)
 
-if access_kwargs:
-    print("Permission set access details:")
-    # for key, value in access_kwargs.items():
-    #     print(f"{key}: {value}")
-    permissionSet = PermissionSet(**access_kwargs)
-    pprint(permissionSet.__dict__, width=100, sort_dicts=False)
-    # pprint(access_kwargs, width=100, sort_dicts=False)
-
-    # You can now use access_kwargs to create a new permission set
-    # new_permission_set = sso_admin.create_permission_set(
-    #     InstanceArn=instance_arn,
-    #     **access_kwargs
-    # )
-else:
-    print("Failed to retrieve permission set access details.")
+        # You can now use access_kwargs to create a new permission set
+        # new_permission_set = sso_admin.create_permission_set(
+        #     InstanceArn=instance_arn,
+        #     **access_kwargs
+        # )
+    else:
+        print("Failed to retrieve permission set access details.")
