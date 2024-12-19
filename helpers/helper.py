@@ -1,6 +1,7 @@
 import subprocess, shlex
 import logging 
 import botocore
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -49,3 +50,18 @@ def get_org_account_list(session):
         response = client.list_accounts(NextToken=response['NextToken'])
         accounts.extend([account for account in response['Accounts'] if account['Status'] == 'ACTIVE'])
     return accounts
+
+def create_logger(logger_name, log_path, log_file_name):
+    logger = logging.getLogger(logger_name)
+    logger.setLevel(logging.INFO)
+    formatter = logging.Formatter(
+        '%(asctime)s ::%(levelname)s:: %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
+    file_handler = logging.FileHandler(os.path.join(log_path, log_file_name))
+    file_handler.setFormatter(formatter)
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
+    logger.addHandler(console_handler)
+    return logger

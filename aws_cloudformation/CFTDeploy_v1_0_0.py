@@ -38,14 +38,14 @@ def get_sts_client(session=None):
         session = boto3.Session()
     return session.client('sts')
 
-def assume_role(account_id, session_name, duration=900):
+def assume_role(account_id, session_name, session, duration=900 ):
     if not session_name:
         raise ValueError("RoleSessionName must be provided")
 
     if not check_accountid_format(account_id):
         raise ValueError("Invalid account_id format")
     
-    sts = get_sts_client()
+    sts = get_sts_client(session)
     
     try:
         response = sts.assume_role(
