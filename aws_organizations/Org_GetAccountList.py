@@ -18,7 +18,9 @@ def get_all_accounts():
 def write_accounts_to_csv(accounts):
     """Write account information to CSV file"""
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = f'aws_accounts_{timestamp}.csv'
+    file_path = r'C:\Users\sgwalls\Documents\AWS_Projects\Exports'
+    filename = f'aws_account_list{timestamp}.csv'
+    filename = f'{file_path}\\{filename}'
     
     with open(filename, 'w', newline='') as csvfile:
         writer = csv.writer(csvfile)

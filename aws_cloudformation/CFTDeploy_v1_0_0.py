@@ -106,7 +106,6 @@ if __name__ == "__main__":
     # target_input = input("List the Account IDs for the target account " 
     #                     "(Separate multiple entries with a comma ','): ")
     # new_parameters = input("Define the parameters for new stack creation: ")
-   
     accounts = target_input.split(',')
     directory = os.path.normpath(file_directory)
     file = file_name
@@ -182,7 +181,7 @@ if __name__ == "__main__":
                                 'ParameterValue': param.split('=')[1]}
                                 for param in chg_parameters]
             else:
-                chg_parameters = existing_stack['Parameters']    
+                chg_parameters = existing_stack['Parameters'] if existing_stack.get('Parameters') else None
             cloudformation.create_change_set(
                 StackName=stack_name,
                 TemplateBody=template,
