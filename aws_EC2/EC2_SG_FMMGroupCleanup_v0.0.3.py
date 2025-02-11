@@ -52,16 +52,17 @@ def remove_security_groups_from_nic(network_interface_info, security_group_ids: 
         
         # Check if removing these groups would leave the interface with no security groups
         if not new_groups:
-            raise ValueError(
+            print(
                 "Cannot remove all specified security groups as it would leave the "
                 "network interface with no security groups attached"
             )
+            groups_to_remove = []
             
         # Update the network interface with the new security group list
-        client.modify_network_interface_attribute(
-            NetworkInterfaceId=network_interface_id,
-            Groups=new_groups
-        )
+        # client.modify_network_interface_attribute(
+        #     NetworkInterfaceId=network_interface_id,
+        #     Groups=new_groups
+        # )
         
         return True, list(groups_to_remove)
         
@@ -77,10 +78,10 @@ sg_prefix_list = [
 ]
 
 session = boto3.Session(profile_name='ct_master',region_name='us-west-2')
-# account_list = get_org_account_list(session)
-account_list = addtl_accounts
-sts = session.client('sts')
 validate_sso_token(session)
+account_list = get_org_account_list(session,filter='Dev')
+# account_list = addtl_accounts
+sts = session.client('sts')
 
 for account in account_list:
     assumed_role = sts.assume_role(
@@ -93,7 +94,7 @@ for account in account_list:
         aws_session_token=assumed_role['Credentials']['SessionToken'],
         region_name='us-west-2'
     )
-    print(f"Account: {account['Id']}")
+    print(f"AccountId: {account['Id']}, AccountName: {account['Name']}")
     ec2 = assumed_session.client('ec2')
 
     response = ec2.describe_security_groups()
@@ -119,13 +120,13 @@ for account in account_list:
         status,removed_sg = remove_security_groups_from_nic(nic,sg_final_dict.keys(),ec2)
         if status:
             print(f"Removed SGs: {removed_sg}")
-    for sg_id in sg_final_dict.keys():
-        choice = input(f"Continue with deleting security Group with id {sg_id} and name {sg_final_dict[sg_id]}: ").lower()
-        if choice in ["","y"]:
-            ec2.delete_security_group(
-                GroupId=sg_id
-            )
-        elif choice == "n":
-            continue
-        else:
-            print("Invalid input")
+    # for sg_id in sg_final_dict.keys():
+    #     choice = input(f"Continue with deleting security Group with id {sg_id} and name {sg_final_dict[sg_id]}: ").lower()
+    #     if choice in ["","y"]:
+    #         ec2.delete_security_group(
+    #             GroupId=sg_id
+    #         )
+    #     elif choice == "n":
+    #         continue
+    #     else:
+    #         print("Invalid input")

@@ -40,15 +40,33 @@ def validate_sso_token(session):
     except Exception as e:
         logger.info(e)
 
-def get_org_account_list(session):
+def get_accounts_with_filter(session, root_identifier, parent_filter):
+    org = session.client('organizations')
+    target_ou_id_list = [
+        ou['Id'] for ou in org.list_organizational_units_for_parent(
+            ParentId=root_identifier)['OrganizationalUnits']
+        if ou['Name'] in parent_filter
+    ]
+    target_account_list = []
+    paginator = org.get_paginator('list_accounts_for_parent')
+    for ou_id in target_ou_id_list:
+        page_iterator = paginator.paginate(ParentId=ou_id)
+        for page in page_iterator:
+            target_account_list.extend([account for account in page['Accounts'] if account['Status'] == 'ACTIVE'])
+    return target_account_list
+
+def get_org_account_list(session,filter=None):
     client = session.client('organizations')
-    validate_sso_token(session)
-    accounts = []
-    response = client.list_accounts()
-    accounts.extend([account for account in response['Accounts'] if account['Status'] == 'ACTIVE'])
-    while 'NextToken' in response:
-        response = client.list_accounts(NextToken=response['NextToken'])
+    if filter:
+        accounts = get_accounts_with_filter(session,root_identifier=session.client('organizations').list_roots()['Roots'][0]['Id'],parent_filter=filter)
+    else:
+        validate_sso_token(session)
+        accounts = []
+        response = client.list_accounts()
         accounts.extend([account for account in response['Accounts'] if account['Status'] == 'ACTIVE'])
+        while 'NextToken' in response:
+            response = client.list_accounts(NextToken=response['NextToken'])
+            accounts.extend([account for account in response['Accounts'] if account['Status'] == 'ACTIVE'])
     return accounts
 
 def create_logger(logger_name, log_path, log_file_name):

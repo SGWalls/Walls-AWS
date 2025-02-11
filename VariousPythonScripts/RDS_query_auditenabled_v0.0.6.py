@@ -1,5 +1,6 @@
 import boto3
 import csv
+import subprocess, shlex
 from typing import Dict, Any
 from datetime import datetime
 
@@ -15,8 +16,27 @@ addtl_accounts = [
     }
 ]
 
+def refresh_sso_token(profile_name):
+    try:
+        subprocess.run(shlex.split(
+            f"aws sso login --profile {profile_name}"
+        ))
+        print(f"SSO token refreshed for profile {profile_name}")
+    except subprocess.CalledProcessError as e:
+        print(f"Failed to refresh SSO token: {e}")
+        exit(1)
+        
 def get_session(profile_name):
-    session = boto3.Session(profile_name=profile_name,region_name='us-west-2')
+    session = boto3.Session(profile_name=profile_name)
+    sts = session.client('sts')
+    
+    try:
+        sts.get_caller_identity()
+    except Exception:
+        print(f"Session token invalid or expired. Refreshing...")
+        refresh_sso_token(profile_name)
+        session = boto3.Session(profile_name=profile_name)
+    
     return session
 
 def get_member_accounts(org_client):
@@ -143,6 +163,21 @@ def check_rds_audit_logging(session, account_id: str) -> list:
                 except Exception as e:
                     print(f"Error checking option group for instance {instance_id}: {e}")
             
+            elif 'sqlserver' in engine:
+                try:
+                    option_group_name = instance['OptionGroupMemberships'][0]['OptionGroupName']
+                    options = rds_client.describe_option_groups(
+                        OptionGroupName=option_group_name
+                    )['OptionGroupsList'][0]['Options']
+                    
+                    audit_enabled = any(
+                        option['OptionName'] == 'SQLSERVER_AUDIT'
+                        for option in options
+                    )
+                    cloudwatch_enabled = "N/A"
+                except Exception as e:
+                    print(f"Error checking option group for instance {instance_id}: {e}")
+                    
             results.append({
                 'AccountID': account_id,
                 'ClusterName': cluster_name,
@@ -164,7 +199,8 @@ def main():
     
     # Get all accounts
     accounts = get_member_accounts(org_client)
-    
+    accounts.extend(addtl_accounts)
+    # accounts = addtl_accounts
     # Prepare CSV output
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
     file_path = r"C:\Users\sgwalls\Documents\AWS_Projects\Exports"
@@ -187,17 +223,22 @@ def main():
             try:
                 # Assume role in member account
                 sts_client = session.client('sts')
-                assumed_role = sts_client.assume_role(
+                
+                if account['Id'] == "741252614647":
+                    assumed_session = boto3.Session(profile_name='master',region_name='us-west-2')
+                elif account['Id'] == "662627786878":
+                    assumed_session = boto3.Session(profile_name='ct_master',region_name='us-west-2')
+                else:
+                    assumed_role = sts_client.assume_role(
                     RoleArn=f"arn:aws:iam::{account['Id']}:role/AWSControlTowerExecution",
                     RoleSessionName="RDSAuditCheck"
-                )
-                
-                assumed_session = boto3.Session(
-                    aws_access_key_id=assumed_role['Credentials']['AccessKeyId'],
-                    aws_secret_access_key=assumed_role['Credentials']['SecretAccessKey'],
-                    aws_session_token=assumed_role['Credentials']['SessionToken'],
-                    region_name='us-west-2'  # Update as needed
-                )
+                    ) 
+                    assumed_session = boto3.Session(
+                        aws_access_key_id=assumed_role['Credentials']['AccessKeyId'],
+                        aws_secret_access_key=assumed_role['Credentials']['SecretAccessKey'],
+                        aws_session_token=assumed_role['Credentials']['SessionToken'],
+                        region_name='us-west-2'  # Update as needed
+                    )
                 
                 # Check RDS instances in the account
                 results = check_rds_audit_logging(assumed_session, account['Id'])

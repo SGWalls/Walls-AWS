@@ -1,6 +1,7 @@
 import boto3
 import os
 import logging
+from retriever import validate_sso_token
 from botocore.exceptions import SSOTokenLoadError
 from botocore.exceptions import UnauthorizedSSOTokenError
 
@@ -38,7 +39,8 @@ def get_ipranges(ipblocks):
 
 profileName = input("Use which profile: ")
 session = boto3.session.Session(profile_name=profileName,region_name="us-west-2")
-test_token(session)
+validate_sso_token(session)
+# test_token(session)
 ec2 = session.client('ec2')
 vpc_id = input('Enter VPC ID: ')
 group_name = input('Enter a Name for the Security Group: ')
