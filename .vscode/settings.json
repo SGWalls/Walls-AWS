@@ -22,5 +22,8 @@
         "!Sub scalar",
         "!Transform mapping",
         "!Ref scalar",
-    ]
+    ],
+    "yaml.schemas": {
+        "https://json.schemastore.org/yamllint.json": "file:///c%3A/Users/sgwalls/Downloads/crowdstrike_aws_single_account_access.yaml"
+    }
 }

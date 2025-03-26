@@ -137,14 +137,14 @@ def select_vpc(session):
     return answers['vpc_id']
 
 while True: 
-    account_id = input("Enter the AWS Account ID of the Account where the error occurred: ")
+    account_id = input("Enter the AWS Account ID of the Account where the group is needed: ")
     if not check_input(account_id):
         continue
     elif not check_format(account_id):
         continue
     else:
         break
-target_account_name = input("Enter the of the Target Account: ")
+target_account_name = input("Enter the name of the Target Account: ")
 target_account_name = target_account_name.replace(" ","_").lower()
 role_name = input(
     "Name of the role you use for accessing the account (Case Sensitive):  "
