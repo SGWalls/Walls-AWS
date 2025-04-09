@@ -385,19 +385,28 @@ while True:
 target_account = Account(account_id)
 vpc_id = target_account.select_vpc()
 subnets = target_account.get_subnets(vpc_id, 'PVT')
+
 # service_list = [
 #     's3',
 #     'dynamodb',
 #     'sns',
+#     'events',
 #     'secretsmanager',
 #     'states',
-#     'apigateway',
-#     'xray'
+#     'apigateway'
 # ]
+
+### Comment from Here -->
+
 serviceInput = select_service()
 if serviceInput == 'UNLISTED':
     serviceInput = input("Enter the name of the service: ")
+
+### <-- to here if using service_list above.
+
+### Uncomment if using service_list list. -->
 # for serviceInput in service_list:
+### <--  
 print(f"Creating Endpoint for {get_friendly_name(serviceInput)}")
 service = generate_service_name(serviceInput)
 if service == f"com.amazonaws.{region}.s3" or service == f"com.amazonaws.{region}.dynamodb":

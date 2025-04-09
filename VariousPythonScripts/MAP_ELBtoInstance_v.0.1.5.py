@@ -38,20 +38,24 @@ class Account:
             region_name = self.region,
         )
 
-    def get_name(self,identifier,accountId):
+    def get_name(self, identifier, accountId):
+        name = None  # Initialize name outside the loops
         tagMappings = self.client_config('resourcegroupstaggingapi').get_resources(
             ResourceARNList=[
                 f'arn:aws:ec2:us-west-2:{accountId}:instance/{identifier}'
             ]
         )['ResourceTagMappingList']
+        
+        if not tagMappings:  # If no tag mappings found
+            return None
+            
         for tags in tagMappings:
-            if len(tagMappings) < 1:
-                name = None
             for tag in tags['Tags']:
-                name=None
-                if not name:
-                    name = tag['Value'] if (tag['Key'] == 'Name') else None
-        return name
+                if tag['Key'] == 'Name':
+                    name = tag['Value']
+                    return name  # Return as soon as we find the Name tag
+        
+        return name  # Return None if no Name tag was found
 
     def map_elb_to_instance(self):
         elb = self.client_config('elbv2')
