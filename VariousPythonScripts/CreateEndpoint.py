@@ -2,10 +2,9 @@ import boto3
 import os
 import logging
 from configparser import ConfigParser
-from PyInquirer import prompt
+from PyInquirer.prompt import prompt
 from botocore.exceptions import SSOTokenLoadError
 from botocore.exceptions import UnauthorizedSSOTokenError
-
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)

@@ -1,14 +1,17 @@
 import boto3
-import json
-import yaml
 import os
 import logging
 import uuid
 import argparse
+import re
+import subprocess
+import shlex
+from datetime import datetime
 from botocore.exceptions import ClientError
 from botocore.exceptions import WaiterError
 from botocore.exceptions import SSOTokenLoadError
 from botocore.exceptions import UnauthorizedSSOTokenError
+
 
 
 def test_token(session):
@@ -20,8 +23,34 @@ def test_token(session):
             delimiter()
             logger.info(e)
             logger.info("Reinitiating SSO Login...")
-            os.system(f"aws sso login --profile {session.profile_name}")
+            cmd = f"aws sso login --profile {session.profile_name}"
+            subprocess.run(shlex.split(cmd), check=True)
     return 
+
+def sanitize_session_name(session_name):
+    # Remove invalid characters
+    clean_name = re.sub(r'[^a-zA-Z0-9=,.@-]', '-', session_name)
+    
+    # Truncate to 64 characters if needed
+    if len(clean_name) > 64:
+        clean_name = clean_name[:64]
+    
+    return clean_name
+
+def get_session_name_from_sso_session(session):
+    # Get the credentials from the session
+    try:
+        # Try to get the identity if available
+        identity = session.client('sts').get_caller_identity()
+        # Extract useful information from the ARN
+        arn_parts = identity['Arn'].split('/')
+        if len(arn_parts) > 1:
+            return sanitize_session_name(arn_parts[-1])
+    except Exception as e:
+        print(f"Could not get identity: {e}")
+    # Fallback: Create a session name using timestamp
+    timestamp = datetime.now().strftime('%Y%m%d-%H%M%S')
+    return f"cloudformation_deploy-{timestamp}"
 
 # function to validate AWS account id is correct format
 def check_accountid_format(accountId):
@@ -38,15 +67,11 @@ def get_sts_client(session=None):
         session = boto3.Session()
     return session.client('sts')
 
-def assume_role(account_id, session_name, session, duration=900 ):
-    if not session_name:
-        raise ValueError("RoleSessionName must be provided")
-
+def assume_role(account_id, session, duration=900 ):
+    session_name = get_session_name_from_sso_session(session)
     if not check_accountid_format(account_id):
         raise ValueError("Invalid account_id format")
-    
     sts = get_sts_client(session)
-    
     try:
         response = sts.assume_role(
             RoleArn=f'arn:aws:iam::{account_id}:role/AWSControlTowerExecution',
@@ -58,7 +83,6 @@ def assume_role(account_id, session_name, session, duration=900 ):
         logger.error(f"Error assuming role: {e}")
         raise
 
-
 def client_config(creds,service,region='us-west-2'):
     response = session.client(
         aws_access_key_id = creds['AccessKeyId'],
@@ -69,13 +93,11 @@ def client_config(creds,service,region='us-west-2'):
     )
     return response
 
-
 def check_input(inpt: str):
     if inpt:
         inpt.split(',')
     else:
         print("Input is empty!")
-
 
 def check_format(accountId):
     if (len(accountId) == 12 and accountId.isdigit()):
@@ -84,9 +106,9 @@ def check_format(accountId):
         print("Account ID is INVALID!")
         return False
 
-
 def delimiter(symbol='='):
     logger.info(symbol * 120)
+
 
 if __name__ == "__main__":        
     parser = argparse.ArgumentParser(description="Deploy the referenced cloudformation Template to the target account.")
@@ -140,7 +162,7 @@ if __name__ == "__main__":
     for account in accounts:
         if not check_format(account):
             continue
-        credentials = assume_role(account,"cloudFormationDeploy",session=session)
+        credentials = assume_role(account,session=session)
         cloudformation = client_config(credentials,"cloudformation")
         try:
             stack_map = {stack['StackName'].lower():stack['StackName'] for stack in cloudformation.list_stacks()['StackSummaries']}

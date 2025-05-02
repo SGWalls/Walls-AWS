@@ -2,6 +2,8 @@ import subprocess, shlex
 import logging 
 import botocore
 import os
+import re
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -83,3 +85,34 @@ def create_logger(logger_name, log_path, log_file_name):
     logger.addHandler(file_handler)
     logger.addHandler(console_handler)
     return logger
+
+def get_session_name_from_sso_session(session):
+    
+    def sanitize_session_name(session_name):
+        # Remove invalid characters
+        clean_name = re.sub(r'[^a-zA-Z0-9=,.@-]', '-', session_name)
+        
+        # Truncate to 64 characters if needed
+        if len(clean_name) > 64:
+            clean_name = clean_name[:64]
+        
+        return clean_name
+    
+    # Get the credentials from the session
+    try:
+        # Try to get the identity if available
+        identity = session.client('sts').get_caller_identity()
+        # Extract useful information from the ARN
+        arn_parts = identity['Arn'].split('/')
+        if len(arn_parts) > 1:
+            return sanitize_session_name(arn_parts[-1])
+    except Exception as e:
+        print(f"Could not get identity: {e}")
+    # Fallback: Create a session name using timestamp
+    timestamp = datetime.now().strftime('%Y%m%d-%H%M%S')
+    return f"cloudformation_deploy-{timestamp}"
+
+
+
+if __name__ == "__main__":
+    pass

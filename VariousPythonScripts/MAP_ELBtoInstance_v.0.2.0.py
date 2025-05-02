@@ -47,18 +47,21 @@ def get_account_list():
 def get_lb_data(account):
     """Get Load Balancer and target data for an account"""
     lb_data = []
-    credentials = assume_role(account['id'])
-    
-    if not credentials:
-        return lb_data
+    if account['id'] != '662627786878':
+        credentials = assume_role(account['id'])
+        
+        if not credentials:
+            return lb_data
 
-    # Create session with assumed role credentials
-    session = boto3.Session(
-        aws_access_key_id=credentials['AccessKeyId'],
-        aws_secret_access_key=credentials['SecretAccessKey'],
-        aws_session_token=credentials['SessionToken'],
-        region_name='us-west-2'
-    )
+        # Create session with assumed role credentials
+        session = boto3.Session(
+            aws_access_key_id=credentials['AccessKeyId'],
+            aws_secret_access_key=credentials['SecretAccessKey'],
+            aws_session_token=credentials['SessionToken'],
+            region_name='us-west-2'
+        )
+    else:
+        session = boto3.Session(profile_name='ct_master',region_name='us-west-2')
 
     elb_client = session.client('elbv2')
     ec2_client = session.client('ec2')
@@ -145,8 +148,8 @@ def main():
     # Convert to DataFrame and export to Excel
     if all_lb_data:
         df = pd.DataFrame(all_lb_data)
-        current_date = datetime.now().strftime('%Y-%m-%d')
-        excelfilename = (f"LoadBalancer_Instance_Mapping-{current_date}.xlsx")
+        current_time = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+        excelfilename = (f"LoadBalancer_Instance_Mapping-{current_time}.xlsx")
         export_path = (
         f"{userprofile}\\Documents\\AWS_Projects\\Scripts\\Python\\"
             "LoadBalancer_Instance_Map\\"
