@@ -104,7 +104,9 @@ class Account():
                     return False
             # Check if there are any extra settings in the current policy
             for key in current_policy:
-                if key not in new_policy:
+                if key == 'ExpirePasswords':
+                    continue
+                elif key not in new_policy:
                     return False
             return True
         except ClientError as e:

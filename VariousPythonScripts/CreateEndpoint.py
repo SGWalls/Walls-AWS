@@ -1,6 +1,8 @@
 import boto3
 import os
 import logging
+import re
+from datetime import datetime
 from configparser import ConfigParser
 from PyInquirer.prompt import prompt
 from botocore.exceptions import SSOTokenLoadError
@@ -18,21 +20,22 @@ class Account:
     def __init__(self, account_id=None, session=None, region="us-west-2"):
         self.region = region
         self.session = session if session else boto3
+        self.session_name = get_session_name_from_sso_session(self.session)
         self.account_id = account_id 
         self.credentials = self.get_credentials()
 
     def get_credentials(self):
-        return self.assume_role('ent_setS3AccountPubBlock')
+        return self.assume_role(self.session_name)
 
     def assume_role(self, session_name, 
                     role_name="AWSControlTowerExecution", 
-                    duration=900):        
-        response = self.session.client('sts').assume_role(
+                    duration=900): 
+        ar_response = self.session.client('sts').assume_role(
             RoleArn=f"arn:aws:iam::{self.account_id}:role/{role_name}",
             RoleSessionName=session_name,
             DurationSeconds=duration
         )
-        return response['Credentials']
+        return ar_response['Credentials']
 
     def client_config(self, service):
         return self.session.client(
@@ -46,10 +49,10 @@ class Account:
     def get_vpc_list(self):
         """Get list of VPCs in the account"""
         ec2 = self.client_config('ec2')
-        response = ec2.describe_vpcs()
+        gvpl_response = ec2.describe_vpcs()
         
         vpc_list = []
-        for vpc in response['Vpcs']:
+        for vpc in gvpl_response['Vpcs']:
             vpc_name = 'Unnamed VPC'
             if 'Tags' in vpc:
                 for tag in vpc['Tags']:
@@ -66,7 +69,7 @@ class Account:
     # function to return the subnets that have a Name with a given prefix which are in a given VPC
     def get_subnets(self, vpc_id, prefix):
         ec2 = self.client_config('ec2')
-        response = ec2.describe_subnets(
+        gs_response = ec2.describe_subnets(
             Filters=[
                 {
                     'Name': 'vpc-id',
@@ -80,7 +83,7 @@ class Account:
         )
         subnets = []
         az_tracker = {}
-        for subnet in response['Subnets']:
+        for subnet in gs_response['Subnets']:
             if az_tracker.get(subnet['AvailabilityZone'], 0) >= 1:
                 continue
             az_tracker[subnet['AvailabilityZone']] = az_tracker.get(subnet['AvailabilityZone'], 0) + 1  
@@ -89,7 +92,7 @@ class Account:
 
     def get_vpc_rt(self,vpc_id):
         ec2 = self.client_config('ec2')
-        response = ec2.describe_route_tables(
+        gvrt_response = ec2.describe_route_tables(
             Filters=[
                 {
                     'Name': 'vpc-id',
@@ -98,24 +101,24 @@ class Account:
             ]
         )
         rt_list = []
-        for rt in response['RouteTables']:
+        for rt in gvrt_response['RouteTables']:
             rt_list.append(rt['RouteTableId'])
         return rt_list
 
     def create_sg(self, group_name, vpc_id, description=""):
         ec2 = self.client_config('ec2')
         try: 
-            response = ec2.create_security_group(
+            csg_response = ec2.create_security_group(
                 Description=description,
                 GroupName=group_name,
                 VpcId=vpc_id,
             )
-            self.create_sg_ingress_rule(response['GroupId'], ['10.0.0.0/8', '192.168.0.0/16'])
+            self.create_sg_ingress_rule(csg_response['GroupId'], ['10.0.0.0/8', '192.168.0.0/16'])
         except Exception as e:
             logger.info(e)
             logger.info("Security Group Already Exists.  Skipping Creation.") 
             if e.response['Error']['Code'] == 'InvalidGroup.Duplicate':
-                response = ec2.describe_security_groups(
+                csg_response = ec2.describe_security_groups(
                     Filters=[
                         {
                             'Name': 'group-name',
@@ -127,7 +130,7 @@ class Account:
                         }
                     ]
                 )['SecurityGroups'][0]
-        return response['GroupId']
+        return csg_response['GroupId']
 
     def create_sg_ingress_rule(self, group_id, ipRange_list):
         ec2 = self.client_config('ec2')
@@ -139,11 +142,11 @@ class Account:
                 'ToPort': 443        
             }
         ]
-        response = ec2.authorize_security_group_ingress(
+        csgir_response = ec2.authorize_security_group_ingress(
             GroupId=group_id,
             IpPermissions=ingress_permission
         )
-        return response
+        return csgir_response
 
     def generate_vpce_kwargs(self,service_name, vpc_endpoint_type, vpc_id, subnets=None, 
                              security_groups=None, private_dns_enabled=True):
@@ -180,8 +183,8 @@ class Account:
                     private_dns_enabled=False):
         ec2 = self.client_config('ec2')
         kwargs = self.generate_vpce_kwargs(service_name, vpc_endpoint_type, vpc_id, subnets, security_groups, private_dns_enabled)
-        response = ec2.create_vpc_endpoint(**kwargs)
-        return response
+        cvpce_response = ec2.create_vpc_endpoint(**kwargs)
+        return cvpce_response
 
     def select_vpc(self):
         """Display VPCs and let user select one using PyInquirer"""
@@ -315,14 +318,14 @@ def get_friendly_name(service_name: str) -> str:
         'ecs-agent': 'ECSAgent',
         'ecs-telemetry': 'ECSTelemetry',
         'kinesis-streams': 'KinesisStreams',
-        'sagemaker.api': 'SageMaker',
+        'sagemaker.api': 'SageMakerApi',
         'sagemaker.runtime': 'SageMakerRuntime'
     }
 
     # Extract the service name from the full endpoint name
     if service_name.startswith('com.amazonaws.'):
         # Split by dots and get the last part (service name)
-        service = service_name.split('.')[-1]
+        service = ".".join(service_name.split('.')[3:])
     else:
         service = service_name
 
@@ -370,6 +373,30 @@ def generate_resource_policy(account_id):
         ]
         }
 
+def sanitize_session_name(session_name):
+    # Remove invalid characters
+    clean_name = re.sub(r'[^a-zA-Z0-9=,.@-]', '-', session_name)
+    
+    # Truncate to 64 characters if needed
+    if len(clean_name) > 64:
+        clean_name = clean_name[:64]
+    
+    return clean_name
+
+def get_session_name_from_sso_session(session):
+    # Get the credentials from the session
+    try:
+        # Try to get the identity if available
+        identity = session.client('sts').get_caller_identity()
+        # Extract useful information from the ARN
+        arn_parts = identity['Arn'].split('/')
+        if len(arn_parts) > 1:
+            return sanitize_session_name(arn_parts[-1])
+    except Exception as e:
+        print(f"Could not get identity: {e}")
+    # Fallback: Create a session name using timestamp
+    timestamp = datetime.now().strftime('%Y%m%d-%H%M%S')
+    return f"cloudformation_deploy-{timestamp}"
 
 
 master_session = boto3.Session(profile_name='ct_master',region_name='us-west-2')
@@ -385,15 +412,15 @@ target_account = Account(account_id)
 vpc_id = target_account.select_vpc()
 subnets = target_account.get_subnets(vpc_id, 'PVT')
 
-# service_list = [
-#     's3',
-#     'dynamodb',
-#     'sns',
-#     'events',
-#     'secretsmanager',
-#     'states',
-#     'apigateway'
-# ]
+service_list = [
+    's3',
+    'dynamodb',
+    'sns',
+    'events',
+    'secretsmanager',
+    'states',
+    'apigateway'
+]
 
 ### Comment from Here -->
 
@@ -422,6 +449,7 @@ try:
         private_dns_enabled=True
         )
 except Exception as e:
-    print(e)    
+    print(e)
+    raise   
 
 

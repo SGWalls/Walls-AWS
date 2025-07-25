@@ -7,6 +7,7 @@ from botocore.exceptions import ClientError
 from botocore.exceptions import SSOTokenLoadError
 from botocore.exceptions import UnauthorizedSSOTokenError
 from configparser import ConfigParser
+from retriever import validate_sso_token
 
 
 logger = logging.getLogger()
@@ -34,13 +35,11 @@ def append_profiles(filepath, account_id, account_name, role_name, filetype="con
     if filetype.lower() == "credentials":
         profile = ""
     config[f"{profile}{account_name}"] = dict(
-        sso_start_url = "https://globeaws.awsapps.com/start",
-        sso_region = region,
+        sso_session = "glb_session",
         sso_account_id = account_id,
         sso_role_name = role_name,
         region = region,
-        ca_bundle = "C:\\Program Files\\Amazon\\AWSCLIV2\\nskp_config\\netskope-cert-bundle.pem",
-        output = "json",
+        output = "json"
     )
     
     with open(filepath, "w") as configfile:
@@ -103,7 +102,7 @@ session = boto3.session.Session(
     profile_name=target_account_name,
     region_name=region
 )
-test_token(session)
+validate_sso_token(session)
 # session = boto3.session.Session(profile_name="prd_poly",region_name="us-west-2")
 # test_token(session)
 ec2 = session.client('ec2')

@@ -220,7 +220,7 @@ if __name__ == "__main__":
                             'ParameterValue': value
                         })                                
             else:
-                final_parameters = existing_stack['Parameters'] if existing_stack.get('Parameters') else None
+                final_parameters = existing_stack['Parameters'] if existing_stack.get('Parameters') else list()
             cloudformation.create_change_set(
                 StackName=stack_name,
                 TemplateBody=template,
