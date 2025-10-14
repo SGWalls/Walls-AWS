@@ -1,0 +1,24 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CrossAccountS3Copy", "lambda_functions\CrossAccountS3Copy.csproj", "{0D7689B5-C293-736C-CA6C-76468725643C}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0D7689B5-C293-736C-CA6C-76468725643C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0D7689B5-C293-736C-CA6C-76468725643C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0D7689B5-C293-736C-CA6C-76468725643C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0D7689B5-C293-736C-CA6C-76468725643C}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {EE5DC10A-6B42-4DCB-A653-43B9CD9AA0A1}
+	EndGlobalSection
+EndGlobal

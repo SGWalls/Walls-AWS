@@ -29,5 +29,7 @@
     "workbench.editor.empty.hint": "hidden",
     "chat.agent.enabled": false,
     "python.terminal.shellIntegration.enabled": true,
-    "python.analysis.autoIndent": false
+    "python.analysis.autoIndent": false,
+    "python-envs.defaultEnvManager": "ms-python.python:system",
+    "python-envs.pythonProjects": []
 }

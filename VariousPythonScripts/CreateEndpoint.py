@@ -408,7 +408,7 @@ while True:
         continue
     else:
         break
-target_account = Account(account_id)
+target_account = Account(account_id,master_session)
 vpc_id = target_account.select_vpc()
 subnets = target_account.get_subnets(vpc_id, 'PVT')
 

@@ -230,8 +230,8 @@ def main():
                     assumed_session = boto3.Session(profile_name='ct_master',region_name='us-west-2')
                 else:
                     assumed_role = sts_client.assume_role(
-                    RoleArn=f"arn:aws:iam::{account['Id']}:role/AWSControlTowerExecution",
-                    RoleSessionName="RDSAuditCheck"
+                        RoleArn=f"arn:aws:iam::{account['Id']}:role/AWSControlTowerExecution",
+                        RoleSessionName="RDSAuditCheck"
                     ) 
                     assumed_session = boto3.Session(
                         aws_access_key_id=assumed_role['Credentials']['AccessKeyId'],

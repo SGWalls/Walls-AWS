@@ -12,7 +12,9 @@ module_dir = os.path.join(script_dir, '..')
 sys.path.append(module_dir)
 from helpers.helper import validate_sso_token, get_org_account_list
 
-
+# Configure output path
+OUTPUT_PATH = r"C:\Users\sgwalls\Documents\AWS_Projects\Scripts\Python\exports\PermissionSetConfigs"
+datetime.datetime(2020, 3, 24, 20, 25, 35, 559000, tzinfo=tzlocal())
 class PermissionSet:
     def __init__(self, Name=None, Description=None, SessionDuration=None, RelayState=None, ManagedPolicies=None, CustomerManagedPolicyReferences=None, InlinePolicy=None, PermissionsBoundary=None):
         self.Name = Name
@@ -84,10 +86,14 @@ def get_permission_set_access(session, instance_arn, permission_set_arn):
         print(f"An error occurred: {str(e)}")
         return None
 
-def export_to_excel(permission_sets_data, filename=None):
+def export_to_excel(permission_sets_data, filename=None, output_path=None):
     if not filename:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"PermissionSets_Export_{timestamp}.xlsx"
+    
+    if output_path:
+        os.makedirs(output_path, exist_ok=True)
+        filename = os.path.join(output_path, filename)
     
     # Convert to DataFrame for easier Excel export
     df_data = []
@@ -99,7 +105,7 @@ def export_to_excel(permission_sets_data, filename=None):
             'RelayState': ps.RelayState,
             'ManagedPolicies': ', '.join(ps.ManagedPolicies) if ps.ManagedPolicies else '',
             'CustomerManagedPolicies': str(ps.CustomerManagedPolicyReferences) if ps.CustomerManagedPolicyReferences else '',
-            'HasInlinePolicy': 'Yes' if ps.InlinePolicy else 'No',
+            'HasInlinePolicy':  ps.InlinePolicy,
             'PermissionsBoundary': str(ps.PermissionsBoundary) if ps.PermissionsBoundary else ''
         }
         df_data.append(row)
@@ -134,4 +140,4 @@ for permission_set_arn in permission_sets:
         print("Failed to retrieve permission set access details.")
 
 # Export to Excel
-export_to_excel(permission_sets_data)
+export_to_excel(permission_sets_data, output_path=OUTPUT_PATH)
