@@ -6,7 +6,7 @@ import logging
 from datetime import datetime
 
 
-SESSION = boto3.Session(profile_name='master',region_name='us-west-2')
+SESSION = boto3.Session(profile_name='ct_master',region_name='us-west-2')
 logger = logging.getLogger(__name__)
 org_map = {
     'o-k3vox4srr1':'GMAD-LA',

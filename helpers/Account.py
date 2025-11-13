@@ -62,17 +62,17 @@ class Account:
         )
         return response['Credentials']
 
-    def client_config(self, service):
+    def client_config(self, service, region=None):
         return self.session.client(
             service_name=service,
             aws_access_key_id = self.credentials['AccessKeyId'],
             aws_secret_access_key = self.credentials['SecretAccessKey'],
             aws_session_token = self.credentials['SessionToken'],
-            region_name = self.region,
+            region_name = region if region else self.region,
         )
     
     def get_role_name(self):
-        user_input = input("What is the name of the role to be assumed? ")
+        user_input = input(f"What is the name of the role to be assumed? ({self.account_id}) ")
         if user_input:
             return user_input
         else:
