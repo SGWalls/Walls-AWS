@@ -122,7 +122,10 @@ class Account:
                     Filters=[
                         {
                             'Name': 'group-name',
-                            'Values': [group_name]
+                            'Values': [
+                                group_name,
+                                group_name.lower()
+                            ]
                         },
                         {
                             'Name': 'vpc-id',

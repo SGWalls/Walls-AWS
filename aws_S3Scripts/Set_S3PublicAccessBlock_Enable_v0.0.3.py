@@ -43,7 +43,7 @@ class Account:
         try:
             return self.session.client('sts').get_caller_identity().get('Account')
         except (UnauthorizedSSOTokenError, SSOTokenLoadError) as e:
-            if "expired or is otherwise invalid" in str(e):
+            if "expired" in str(e):
                 delimiter()
                 logger.info(e)
                 logger.info("Reinitiating SSO Login...")
