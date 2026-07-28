@@ -1,0 +1,24 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "DenyGP2Volumes",
+      "Effect": "Deny",
+      "Action": [
+        "ec2:CreateVolume",
+        "ec2:ModifyVolume",
+        "ec2:RunInstances",
+        "ec2:AttachVolume"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "ec2:VolumeType": "gp2"
+        },
+        "StringNotEquals": {
+          "aws:PrincipalArn": "arn:aws:iam::<account-id>:role/<bypass-role-name>"
+        }
+      }
+    }
+  ]
+}

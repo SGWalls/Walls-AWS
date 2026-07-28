@@ -1,6 +1,5 @@
 from urllib import request
 import json
-import boto3
 
 def lookup_service_url(serviceName):
     return next((item for item in service_list if item['service'] == serviceName), {}).get('url', None)
@@ -16,7 +15,7 @@ def action_filter(action_list, property_filter):
     #     props = annotation_config.get('Properties', {})
     #     if props[property_filter] == True:
     #         print(action)
-    response = [action for action in action_list if action['Annotations']['Properties'][property_filter] == True]
+    response = [action for action in action_list if action['Annotations']['Properties'].get(property_filter) == True]
     if response:
         return response
 
@@ -45,7 +44,11 @@ service_action_list = service_reference_list['Actions']
 # Most efficient for returning all matches
 # results = [item for item in service_list if item['service'] == 'acm']
 annotation_filter = input("Any properties for filter? ")
-
-services_actions_inscope = action_filter(service_action_list, annotation_filter)
-
-print(services_actions_inscope)
+if annotation_filter:
+    services_actions_inscope = action_filter(service_action_list, annotation_filter)
+else:
+    services_actions_inscope = service_action_list
+serviceActionListFinal = []
+for service_action in services_actions_inscope:
+    serviceActionListFinal.append(f"{service_reference_list['Name']}:{service_action['Name']}")
+print(serviceActionListFinal)

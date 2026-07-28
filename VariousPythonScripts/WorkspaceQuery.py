@@ -3,7 +3,7 @@ import boto3
 
 session = boto3.Session(profile_name='user_svcs',region_name='us-west-2')
 workspaces = session.client('workspaces')
-directoryId = "d-92670e78f5"
+directoryId = "d-926702c3eb"
 computerName = input("What is the computer name? ")
 ipAddress = input("What is the IP Address? ")
 # powerOn = input("Do you want to power on all workspaces? Y or N ")
@@ -24,3 +24,5 @@ for page in page_iterator:
                 print(workspace['WorkspaceId'])
             if computerName and workspace['ComputerName'] == computerName:
                 print(workspace['WorkspaceId'])
+            else:
+                print(f"{workspace['ComputerName']}:{workspace['WorkspaceId']}:{workspace['IpAddress']}")

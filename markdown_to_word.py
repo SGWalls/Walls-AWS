@@ -39,8 +39,8 @@ def setup_styles(doc):
     code_font.name = 'Consolas'
     code_font.size = Pt(9)
     code_style.paragraph_format.left_indent = Inches(0.5)
-    code_style.paragraph_format.space_before = Pt(6)
-    code_style.paragraph_format.space_after = Pt(6)
+    #code_style.paragraph_format.space_before = Pt(6)
+    #code_style.paragraph_format.space_after = Pt(6)
 
 def add_table_borders(table):
     """Add borders to table."""
@@ -186,8 +186,8 @@ def convert_markdown_to_word(md_file_path, output_path):
 
 if __name__ == "__main__":
     # Input and output paths
-    input_file = r"c:\Users\sgwalls\Documents\AWS_Projects\Documentation\Standards\IAM_Access_Controls_Documentation.md"
-    output_file = r"c:\Users\sgwalls\Documents\AWS_Projects\Documentation\Standards\IAM_Access_Controls_Documentation.docx"
+    input_file = r"c:\Users\sgwalls\Documents\AWS_Projects\Scripts\Python\Git_repository\Walls-AWS\Identity_Center_Migration_Glossary.md"
+    output_file = r"c:\Users\sgwalls\Documents\AWS_Projects\Scripts\Python\Git_repository\Walls-AWS\Identity_Center_Migration_Glossary.docx"
     
     # Convert the file
     convert_markdown_to_word(input_file, output_file)

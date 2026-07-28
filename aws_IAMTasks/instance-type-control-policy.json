@@ -1,0 +1,58 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "PreventLaunchOfRestrictedInstanceTypes",
+      "Effect": "Deny",
+      "Action": [
+        "ec2:RunInstances"
+      ],
+      "Resource": "arn:aws:ec2:*:*:instance/*",
+      "Condition": {
+        "StringEquals": {
+          "ec2:InstanceType": [
+            "m5.large",
+            "c5.xlarge"
+          ]
+        }
+      }
+    },
+    {
+      "Sid": "PreventChangeToRestrictedInstanceTypes",
+      "Effect": "Deny",
+      "Action": [
+        "ec2:ModifyInstanceAttribute"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "ec2:Attribute": "instanceType",
+          "ec2:InstanceType": [
+            "m5.large",
+            "c5.xlarge"
+          ]
+        }
+      }
+    },
+    {
+      "Sid": "AllowChangeFromRestrictedToAllowedTypes",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:ModifyInstanceAttribute"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "ec2:Attribute": "instanceType"
+        },
+        "ForAllValues:StringEquals": {
+          "ec2:InstanceType": [
+            "t3.micro",
+            "t3.small",
+            "t3.medium"
+          ]
+        }
+      }
+    }
+  ]
+}

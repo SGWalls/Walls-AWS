@@ -10,7 +10,7 @@ userprofile = os.environ["USERPROFILE"]
 
 def assume_role(account_id, role_name="AWSControlTowerExecution"):
     """Assume role in target account"""
-    sts_client = boto3.client('sts')
+    sts_client = session.client('sts')
     try:
         if not isinstance(account_id, str) or not account_id.isdigit():
             raise ValueError("Invalid account_id: must be a string of digits")
@@ -27,7 +27,8 @@ def assume_role(account_id, role_name="AWSControlTowerExecution"):
 
 def get_account_list():
     """Get list of all accounts in the organization"""
-    org_client = boto3.client('organizations')
+    session = boto3.Session(profile_name='ct_master')
+    org_client = session.client('organizations')
     accounts = []
     
     try:
@@ -134,6 +135,7 @@ def get_lb_data(account):
 
 def main():
     # Get list of accounts
+    
     accounts = get_account_list()
     all_lb_data = []
 
@@ -175,4 +177,5 @@ def main():
         print("No data found")
 
 if __name__ == "__main__":
+    session = boto3.Session(profile_name='ct_master')
     main()

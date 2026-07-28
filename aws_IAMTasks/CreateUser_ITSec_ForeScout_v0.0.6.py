@@ -114,7 +114,7 @@ class Account:
                             self.SecretAccessKey = create_key_response['SecretAccessKey']
                             self.addToList = True
                         else:
-                            logger.debug("User already has a set of valid Keys.")
+                            logger.info("User already has a set of valid Keys.")
                             self.AccessKey = "Valid Keys already exist for user."
                             self.SecretAccessKey = "Valid Keys already exist for user."
                     elif datetime.now(timezone.utc) - access_key['CreateDate'] < timedelta(days=1):
@@ -127,7 +127,7 @@ class Account:
                         self.AccessKey = "Ignore"
                         self.SecretAccessKey = "Ignore"
                     else:
-                        logger.debug("User already has a set of valid Keys.")
+                        logger.info("User already has a set of valid Keys.")
                         self.AccessKey = "Valid Keys already exist for user."
                         self.SecretAccessKey = "Valid Keys already exist for user."
             except iam.exceptions.LimitExceededException:
@@ -137,7 +137,7 @@ class Account:
                 self.SecretAccessKey = "Two Keys Exist for user, unalbe to create key."
                 return False
         else:
-            logger.debug("User does not currently have any keys. Creating new Keys.") 
+            logger.info("User does not currently have any keys. Creating new Keys.") 
             create_key_response = iam.create_access_key(
                             UserName=username
                         )['AccessKey']
@@ -161,7 +161,7 @@ class Account:
             logger.info(f"IAM User Successfully Created!")
             return iam_response['User']['UserName']
         except iam.exceptions.EntityAlreadyExistsException:
-            logger.debug(f"A user with the name {username} already Exists!")
+            logger.info(f"A user with the name {username} already Exists!")
             self.UserName = username
             return {'UserName':username}
 
@@ -234,17 +234,17 @@ account_ids = {item['Id']:item['Name'] for item in account_list if item['Status'
 
 for account in account_ids.keys():
     targetAccount = Account(account,session)
-    logger.debug(delimiter())
-    logger.debug(f"Starting user creation for account with ID {account}. . .")
+    logger.info(delimiter())
+    logger.info(f"Starting user creation for account with ID {account}. . .")
     targetAccount.create_user("CounterACT")
-    logger.debug(f"Checking/Creating Access Key and Secret Key for user. . .")
+    logger.info(f"Checking/Creating Access Key and Secret Key for user. . .")
     targetAccount.create_key(targetAccount.UserName)
     targetAccount.ManageOwnKeyPolicy = json.dumps(manageOwnKeyPolicy)
     targetAccount.attach_policy(targetAccount.ManageOwnKeyPolicy,
                                 "TMK_ManageOwnAccessKey")
     targetAccount.attach_managed_policy(
         "arn:aws:iam::aws:policy/AmazonEC2ReadOnlyAccess")
-    logger.debug(f"IAM User and Keys processed successfully for account "
+    logger.info(f"IAM User and Keys processed successfully for account "
            f"with id {account}")
     if targetAccount.addToList:
         credential_list[account_ids[account]]= {

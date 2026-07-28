@@ -116,8 +116,8 @@ while True:
     encoded_message.append(line)
 encoded_message = ''.join((''.join(encoded_message)).split())
 
-if awscliv2_exists:
-    append_profiles(aws_config_file,account_id,target_account_name,role_name)
+# if awscliv2_exists:
+    # append_profiles(aws_config_file,account_id,target_account_name,role_name)
 session = boto3.session.Session(
     profile_name=target_account_name,
     region_name=region

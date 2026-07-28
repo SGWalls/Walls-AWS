@@ -86,10 +86,12 @@ class Account:
         for page in page_iterator:
             function_list.extend([funct['FunctionName'] for funct in 
                                   page['Functions']])
-            vpc_functs.extend([(funct['FunctionName'],funct['VpcConfig']) for funct in 
+            vpc_functs.extend([funct['FunctionName'] for funct in 
                                page['Functions'] if (funct.get('VpcConfig') and funct.get('VpcConfig').get('VpcId'))])
+            non_vpc_functs = [funct for funct in function_list if funct not in vpc_functs]
         self.all_functions = function_list
         self.vpc_functions = vpc_functs
+        self.non_vpc_functions = non_vpc_functs
 
         # for funct in client.list_functions()['Functions']:
         #     if funct.get('VpcConfig'):
@@ -125,12 +127,16 @@ region = 'us-west-2'
 session = boto3.session.Session(profile_name='ct_master',region_name='us-west-2')
 test_token(session)
 
-dev_ceapp = Account(account_id="047787824797",session=session)
+dev_ceapp = Account(account_id="588755084939",session=session)
 dev_ceapp.get_functions()
 # print(dev_ceapp.all_functions)
 print(len(dev_ceapp.all_functions))
-print(dev_ceapp.vpc_functions)
+print("==============================")
+# print(dev_ceapp.vpc_functions)
+print("==============================")
 print(len(dev_ceapp.vpc_functions))
+print("==============================")
+print(dev_ceapp.non_vpc_functions)
 
 # dev_ceapp.ec2 = dev_ceapp.client_config('ec2')
 # for groupname in appUd_sg_names:
