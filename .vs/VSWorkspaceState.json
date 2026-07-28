@@ -1,9 +1,12 @@
 {
   "ExpandedNodes": [
     "",
+    "\\AccountMigration",
     "\\aws_IAMTasks",
+    "\\aws_transitgateway_Tasks",
+    "\\helpers",
     "\\VariousPythonScripts"
   ],
-  "SelectedNode": "\\aws_IAMTasks\\PermissionSets_Deploy_Specified_Set.py",
+  "SelectedNode": "\\VariousPythonScripts\\MAPSDataSyncTask.py",
   "PreviewInSolutionExplorer": false
 }

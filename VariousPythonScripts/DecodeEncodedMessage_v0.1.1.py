@@ -19,7 +19,7 @@ aws_config_file = f"{userprofile}{aws}config"
 region = "us-west-2"
 
 def awscliv2_exists():
-    "Return True if AWSCLIv2 is installed"
+    # Return True if AWSCLIv2 is installed
     return os.path.exists(
         os.path.dirname("C:/Program Files/Amazon/AWSCLIV2")
     )
@@ -35,6 +35,7 @@ def append_profiles(filepath, account_id, account_name, role_name, filetype="con
     if filetype.lower() == "credentials":
         profile = ""
     config[f"{profile}{account_name}"] = dict(
+        sso_session = 'ctsessions',
         sso_start_url = "https://globeaws.awsapps.com/start",
         sso_region = region,
         sso_account_id = account_id,
@@ -115,8 +116,8 @@ while True:
     encoded_message.append(line)
 encoded_message = ''.join((''.join(encoded_message)).split())
 
-if awscliv2_exists:
-    append_profiles(aws_config_file,account_id,target_account_name,role_name)
+# if awscliv2_exists:
+    # append_profiles(aws_config_file,account_id,target_account_name,role_name)
 session = boto3.session.Session(
     profile_name=target_account_name,
     region_name=region

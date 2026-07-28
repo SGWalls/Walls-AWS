@@ -1,0 +1,54 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "PreventLaunchOfT2InstanceTypes",
+      "Effect": "Deny",
+      "Action": [
+        "ec2:RunInstances"
+      ],
+      "Resource": "arn:aws:ec2:*:*:instance/*",
+      "Condition": {
+        "StringLike": {
+          "ec2:InstanceType": "t2.*"
+        }
+      }
+    },
+    {
+      "Sid": "PreventChangeToT2InstanceTypes",
+      "Effect": "Deny",
+      "Action": [
+        "ec2:ModifyInstanceAttribute"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "ec2:Attribute": "instanceType"
+        },
+        "StringLike": {
+          "ec2:InstanceType": "t2.*"
+        }
+      }
+    },
+    {
+      "Sid": "AllowChangeFromT2ToAllowedTypes",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:ModifyInstanceAttribute"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "ec2:Attribute": "instanceType"
+        },
+        "ForAllValues:StringLike": {
+          "ec2:InstanceType": [
+            "t3.*",
+            "m5.*",
+            "c5.*"
+          ]
+        }
+      }
+    }
+  ]
+}

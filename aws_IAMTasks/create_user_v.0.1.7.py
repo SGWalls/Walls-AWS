@@ -4,6 +4,7 @@ import os
 import logging
 import requests
 import getpass
+import errno
 from botocore.exceptions import SSOTokenLoadError
 from botocore.exceptions import UnauthorizedSSOTokenError
 from configparser import ConfigParser
@@ -121,7 +122,8 @@ class User:
                     ],
                     "Resource": [
                         f"arn:aws:s3:::{bucket_name}/raw/{prefix}/*",
-                        f"arn:aws:s3:::{bucket_name}"
+                        f"arn:aws:s3:::{bucket_name}",
+                        f"arn:aws:s3:::{bucket_name}/IICS/manifest-files/{prefix}/*"
                     ]
                 },
                 {
@@ -657,13 +659,12 @@ print("Attempting authentication for %s..." % username)
 token = getAuthToken(username,password)
 print("Authentication successful.\n")
 catalogs = {
-	'internal_files': [
-		'',
-        'refinedusps_delstat'
-	],
-    'external_datasets':[
-        ''
-    ]
+	'lnl-mainframe': [		
+        'alis-master',
+        'bi-issuepnd',
+        'alis-histfile',
+        'issue-pending'
+	]
 }
 
 region = "us-west-2"

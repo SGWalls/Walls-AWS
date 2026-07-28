@@ -1,0 +1,18 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "DenyUpdateAssumeRolePolicyForProtectedRoles",
+            "Effect": "Deny",
+            "Action": [
+                "iam:UpdateAssumeRolePolicy"
+            ],
+            "Resource": "arn:aws:iam::*:role/*",
+            "Condition": {
+                "Null": {
+                    "aws:ResourceTag/enterprise-protection": "false"
+                }
+            }
+        }
+    ]
+}

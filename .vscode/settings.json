@@ -1,0 +1,35 @@
+{
+    "task.autoDetect": "off",
+    "editor.formatOnPaste": false,
+    "editor.autoIndent": "full",
+    "yaml.customTags": [
+        "!Base64 scalar",
+        "!Cidr scalar",
+        "!And sequence",
+        "!Equals sequence",
+        "!If sequence",
+        "!Not sequence",
+        "!Or sequence",
+        "!Condition scalar",
+        "!FindInMap sequence",
+        "!GetAtt scalar",
+        "!GetAtt sequence",
+        "!GetAZs scalar",
+        "!ImportValue scalar",
+        "!Join sequence",
+        "!Select sequence",
+        "!Split sequence",
+        "!Sub scalar",
+        "!Transform mapping",
+        "!Ref scalar",
+    ],
+    "yaml.schemas": {
+        "https://json.schemastore.org/yamllint.json": "file:///c%3A/Users/sgwalls/Downloads/crowdstrike_aws_single_account_access.yaml"
+    },
+    "workbench.editor.empty.hint": "hidden",
+    "chat.agent.enabled": false,
+    "python.terminal.shellIntegration.enabled": true,
+    "python.analysis.autoIndent": false,
+    "python-envs.defaultEnvManager": "ms-python.python:system",
+    "python-envs.pythonProjects": []
+}

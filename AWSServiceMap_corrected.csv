@@ -1,0 +1,160 @@
+ServiceName,ServicePrefix
+AWS Account Management,account
+AWS Activate,activate
+AWS Access Analyzer,access-analyzer
+Alexa for Business,a4b
+AWS Certificate Manager,acm
+AWS Certificate Manager Private CA,acm-pca
+AWS Amplify,amplify
+AWS Amplify Admin,amplifybackend
+AWS Amplify UI Builder,amplifyuibuilder
+Amazon API Gateway,apigateway
+AWS App Mesh,appmesh
+AWS App Runner,apprunner
+AWS AppConfig,appconfig
+AWS AppFabric,appfabric
+Amazon AppFlow,appflow
+AWS Application Auto Scaling,application-autoscaling
+AWS Application Cost Profiler,application-cost-profiler
+AWS Application Discovery Service,discovery
+AWS Application Migration Service,mgn
+Amazon AppStream 2.0,appstream
+AWS AppSync,appsync
+AWS Artifact,artifact
+Amazon Athena,athena
+AWS Audit Manager,auditmanager
+AWS Auto Scaling,autoscaling
+AWS Backup,backup
+AWS Batch,batch
+Amazon Bedrock,bedrock
+AWS Billing,billing
+AWS Budget Service,budgets
+Amazon Braket,braket
+AWS Chatbot,chatbot
+Amazon Chime,chime
+AWS Clean Rooms,cleanrooms
+AWS Cloud9,cloud9
+AWS CloudFormation,cloudformation
+Amazon CloudFront,cloudfront
+AWS CloudHSM,cloudhsm
+Amazon CloudSearch,cloudsearch
+AWS CloudShell,cloudshell
+AWS CloudTrail,cloudtrail
+Amazon CloudWatch,cloudwatch
+AWS CodeArtifact,codeartifact
+AWS CodeBuild,codebuild
+Amazon CodeCatalyst,codecatalyst
+AWS CodeCommit,codecommit
+AWS CodeDeploy,codedeploy
+Amazon CodeGuru,codeguru
+AWS CodePipeline,codepipeline
+AWS CodeStar,codestar
+Amazon CodeWhisperer,codewhisperer
+Amazon Cognito Identity,cognito-identity
+Amazon Cognito User Pools,cognito-idp
+Amazon Cognito Sync,cognito-sync
+Amazon Comprehend,comprehend
+AWS Compute Optimizer,compute-optimizer
+AWS Config,config
+Amazon Connect,connect
+AWS Control Tower,controltower
+AWS Cost Explorer,ce
+AWS Data Exchange,dataexchange
+AWS Data Pipeline,datapipeline
+AWS DataSync,datasync
+Amazon DataZone,datazone
+Amazon DynamoDB,dynamodb
+Amazon DynamoDB Accelerator (DAX),dax
+Amazon Detective,detective
+AWS Device Farm,devicefarm
+AWS Direct Connect,directconnect
+AWS Directory Service,ds
+AWS Elastic Beanstalk,elasticbeanstalk
+Amazon Elastic Block Store,ebs
+Amazon Elastic Container Registry,ecr
+Amazon Elastic Container Service,ecs
+Amazon Elastic File System,efs
+Amazon Elastic Kubernetes Service,eks
+AWS Elastic Load Balancing,elasticloadbalancing
+Amazon Elastic MapReduce,elasticmapreduce
+Amazon ElastiCache,elasticache
+Amazon EventBridge,events
+AWS Fault Injection Simulator,fis
+Amazon FinSpace,finspace
+AWS Firewall Manager,fms
+Amazon Forecast,forecast
+Amazon Fraud Detector,frauddetector
+Amazon FSx,fsx
+Amazon GameLift,gamelift
+AWS Glue,glue
+AWS Ground Station,groundstation
+Amazon GuardDuty,guardduty
+AWS Health,health
+AWS Identity and Access Management,iam
+AWS IAM Identity Center,sso
+AWS Import/Export,importexport
+Amazon Inspector,inspector
+Amazon Interactive Video Service,ivs
+AWS IoT Core,iot
+AWS IoT Analytics,iotanalytics
+AWS IoT Events,iotevents
+AWS IoT Greengrass,greengrass
+Amazon Kendra,kendra
+AWS Key Management Service,kms
+Amazon Kinesis,kinesis
+Amazon Kinesis Analytics,kinesisanalytics
+Amazon Kinesis Video Streams,kinesisvideo
+AWS Lake Formation,lakeformation
+AWS Lambda,lambda
+Amazon Lex,lex
+AWS License Manager,license-manager
+Amazon Lightsail,lightsail
+Amazon CloudWatch Logs,logs
+Amazon Lookout for Equipment,lookoutequipment
+Amazon Lookout for Metrics,lookoutmetrics
+Amazon Lookout for Vision,lookoutvision
+Amazon Machine Learning,machinelearning
+Amazon Macie,macie2
+AWS Managed Services,managedservices
+Amazon Managed Streaming for Apache Kafka,kafka
+AWS Marketplace,aws-marketplace
+Amazon Mechanical Turk,mechanicalturk
+AWS Elemental MediaConnect,mediaconnect
+AWS Elemental MediaConvert,mediaconvert
+AWS Elemental MediaLive,medialive
+AWS Elemental MediaPackage,mediapackage
+AWS Elemental MediaStore,mediastore
+AWS Elemental MediaTailor,mediatailor
+Amazon Neptune,neptune
+AWS Network Firewall,network-firewall
+Amazon OpenSearch Service,es
+AWS Organizations,organizations
+Amazon Personalize,personalize
+Amazon Pinpoint,pinpoint
+Amazon Polly,polly
+Amazon QLDB,qldb
+Amazon QuickSight,quicksight
+Amazon Redshift,redshift
+Amazon Rekognition,rekognition
+AWS Resource Access Manager,ram
+AWS Resource Groups,resource-groups
+Amazon Route 53,route53
+Amazon S3,s3
+Amazon SageMaker,sagemaker
+AWS Secrets Manager,secretsmanager
+AWS Security Hub,securityhub
+AWS Service Catalog,servicecatalog
+Amazon Simple Email Service,ses
+Amazon Simple Notification Service,sns
+Amazon Simple Queue Service,sqs
+AWS Step Functions,states
+AWS Storage Gateway,storagegateway
+AWS Support,support
+AWS Systems Manager,ssm
+Amazon Textract,textract
+Amazon Transcribe,transcribe
+Amazon Translate,translate
+AWS Trusted Advisor,trustedadvisor
+AWS WAF,waf
+Amazon WorkSpaces,workspaces
+AWS X-Ray,xray
