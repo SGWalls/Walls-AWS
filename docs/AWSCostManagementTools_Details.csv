@@ -1,0 +1,18 @@
+﻿Topic,Detail,Challenge(s),Recommendations,Noteable Incumbant Third-Party Tools,,,,,,,,,,,,
+Cost Explorer,"Currently used today. Enabled by default, no additonal configuration needed.","- Lack of knowledge and training for this service on the teams which should manage and monitor it.
+- Requires AWS console access. 
+- Granting Access to teams to view their costs through Cost Explorer would require a new access delegation for each set of AWS Accounts in their scope.  Making access management a challenge.
+- Cost details are only aggregated in the Master Payer account.  Teams would need to switch to the dashboard of each account individually to view the cost explorer dashboard, or we would need to grant many teams access to the master payer account.
+","Externalize the ability to visualize historical spend patterns, trends, and future cost forecasts to a third-party tool, which can aggregate the cost data and provide similar or better visualization and forecasting features.",Apptio,,,,,,,,,,,,
+AWS Budgets,"- Small pockets of use for alerting.
+- The intent has been to expand the use of AWS Budgets to have teams configure the service to alert them if any costs went beyond their thresholds, or to set a hard limit for their lower environments.  
+- This service would be key to creating a Sandbox environment in order to enforce a spending limit in order to allow for the necessary autonomy of that area.","- Lack of knowledge and training for this service on the teams which should manage and monitor it.
+- In order for a threshold to be set at the Enterprise level it would need to be known what an appropriate threshold should be.  This is currently unknown.","- Additional FinOps training for the leadership of IT teams. 
+- Discussion with BTLs and Financial teams to determine spending thresholds. (If hard limits are intended to be set.)
+",N/A,,,,,,,,,,,,
+AWS Cost Anomaly Detection,"The service is enabled but operates without active monitoring or a defined remediation process, resulting in findings that are reported but never reviewed or acted upon.",- Lack of knowledge and training for this service on the teams which should manage and monitor it.,"- Additional training for teams to be able to configure this service and understand its output. 
+- Define a formalized process to have a central team monitor the findings from this service and address them with the appropriate resource owners.
+",N/A,,,,,,,,,,,,
+AWS Compute Optimizer,Enabled.  NTT Uses this data in order to provide their recommendations for cost optimization opportunities.,,,N/A,,,,,,,,,,,,
+AWS Cost Optimization Hub,Enabled.  NTT Uses this data in order to provide their recommendations for cost optimization opportunities.,,,N/A,,,,,,,,,,,,
+AWS Cost and Usage Reports,Currently used today. Exports are ingested by Apptio.,- Lack of knowledge and training for this service on the teams which should manage and monitor it.,"- Additional training for the finance teams which are reviewing the data as it is imported in to Apptio, so that they better understand the data and how to deliver it effectively.",N/A,,,,,,,,,,,,
