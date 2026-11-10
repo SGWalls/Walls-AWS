@@ -85,7 +85,7 @@ def convert_markdown_to_docx(md_file, docx_file):
     print(f"Word document created: {docx_file}")
 
 if __name__ == '__main__':
-    md_file = r'c:\Users\sgwalls\Documents\AWS_Projects\Scripts\Python\Git_repository\Walls-AWS\Identity_Center_Migration_Glossary.md'
-    docx_file = r'c:\Users\sgwalls\Documents\AWS_Projects\Scripts\Python\Git_repository\Walls-AWS\Identity_Center_Migration_Glossary.docx'
+    md_file = r'c:\Users\sgwalls\Documents\AWS_Projects\Scripts\Python\Git_repository\Walls-AWS\docs\AWS_MultiAccount_Strategy_Policy_v1.md'
+    docx_file = r'c:\Users\sgwalls\Documents\AWS_Projects\Scripts\Python\Git_repository\Walls-AWS\docs\AWS_MultiAccount_Strategy_Policy_v1.docx'
     
     convert_markdown_to_docx(md_file, docx_file)
